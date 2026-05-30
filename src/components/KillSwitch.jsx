@@ -1,22 +1,10 @@
 /**
  * KillSwitch.jsx — Kill-Switch Control Surface
- * Phase 5 Item 2 — Surface 1
- *
- * Writes to shared/state/quant-kill-active via websocket.
- * Polls state every 5s (driven by parent via ws updates).
- * Red when active, Green when inactive.
- * Visual confirmation modal required before activation.
- *
- * Phase 6 Item 1 dependency note:
- *   quant_kill_active() primitive ships in Phase 6 Item 1.
- *   This button uses a direct file-write placeholder via websocket backend.
- *   When Phase 6 Item 1 lands, the wiring is a one-line swap.
- *   Write path configured via KILL_SWITCH_ACTION constant (already parameterised).
+ * Vision UI glass card styling
  */
 
 import { useState } from 'react';
 
-// Configurable write path (swap for Phase 6 Item 1 primitive when ready)
 const KILL_SWITCH_ACTION = 'kill_switch_activate';
 const KILL_SWITCH_DEACTIVATE = 'kill_switch_deactivate';
 
@@ -38,38 +26,34 @@ export function KillSwitch({ active, onSend }) {
   };
 
   return (
-    <div className="surface-card kill-switch-surface">
-      <h3>⛔ Kill Switch</h3>
-      <p className="surface-subtitle">Halt all QUANT activity</p>
+    <div className="glass-card">
+      <h3 className="card-title">⛔ Kill Switch</h3>
+      <p className="card-subtitle">Halt all QUANT activity</p>
 
-      <div className={`kill-indicator ${active ? 'kill-active' : 'kill-inactive'}`}>
+      <div style={{ fontSize: '16px', fontWeight: 700, margin: '12px 0', textAlign: 'center' }}>
         {active ? '🔴 KILL ACTIVE' : '🟢 INACTIVE'}
       </div>
 
       {!active ? (
-        <button className="kill-btn danger" onClick={handleActivateClick}>
+        <button className="btn btn-kill" onClick={handleActivateClick} style={{ width: '100%', justifyContent: 'center' }}>
           Activate Kill Switch
         </button>
       ) : (
-        <button className="kill-btn safe" onClick={handleDeactivateClick}>
+        <button className="btn" onClick={handleDeactivateClick}
+          style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(310deg, #01B574, #00d09c)', color: 'white', boxShadow: '0 3px 8px rgba(1,181,116,0.4)' }}>
           Deactivate Kill Switch
         </button>
       )}
 
-      {/* Activation confirmation modal (GF-4) */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h4>⚠ Confirm Kill Switch</h4>
-            <p>This will halt ALL QUANT activity immediately.</p>
-            <p>Are you sure?</p>
-            <div className="modal-actions">
-              <button className="btn-confirm-danger" onClick={confirmActivate}>
-                Yes, halt QUANT
-              </button>
-              <button className="btn-cancel" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
+          <div className="modal-content">
+            <h4 style={{ marginBottom: '8px' }}>⚠ Confirm Kill Switch</h4>
+            <p style={{ marginBottom: '12px', color: 'var(--text-secondary)' }}>This will halt ALL QUANT activity immediately. Are you sure?</p>
+            <div className="modal-actions" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-kill" onClick={confirmActivate}>Yes, halt QUANT</button>
+              <button className="btn" onClick={() => setShowModal(false)}
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)' }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -77,16 +61,14 @@ export function KillSwitch({ active, onSend }) {
 
       {deactivateModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h4>Deactivate Kill Switch?</h4>
-            <p>QUANT activity will resume.</p>
-            <div className="modal-actions">
-              <button className="btn-confirm-safe" onClick={confirmDeactivate}>
-                Deactivate
-              </button>
-              <button className="btn-cancel" onClick={() => setDeactivateModal(false)}>
-                Cancel
-              </button>
+          <div className="modal-content">
+            <h4 style={{ marginBottom: '8px' }}>Deactivate Kill Switch?</h4>
+            <p style={{ marginBottom: '12px', color: 'var(--text-secondary)' }}>QUANT activity will resume.</p>
+            <div className="modal-actions" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={confirmDeactivate}
+                style={{ background: 'linear-gradient(310deg, #01B574, #00d09c)', color: 'white', boxShadow: '0 3px 8px rgba(1,181,116,0.4)' }}>Deactivate</button>
+              <button className="btn" onClick={() => setDeactivateModal(false)}
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)' }}>Cancel</button>
             </div>
           </div>
         </div>

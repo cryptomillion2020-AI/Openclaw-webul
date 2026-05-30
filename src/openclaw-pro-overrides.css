@@ -1,0 +1,478 @@
+/* =========================================================
+   OpenClaw Pro Vision Theme Overrides
+   Purpose: upgrade Dashboard, Agent Comms, Trading, AI-City
+   to a premium Vision UI / cyber city command-center style.
+   Load AFTER openclaw-vision-ui.css and pages.css.
+   ========================================================= */
+
+:root {
+  --sidebar-width: 272px;
+  --oc-bg-deep: #050713;
+  --oc-bg-panel: rgba(15, 22, 58, 0.74);
+  --oc-bg-panel-strong: rgba(20, 29, 76, 0.86);
+  --oc-border: rgba(126, 151, 255, 0.24);
+  --oc-border-hot: rgba(255, 0, 128, 0.38);
+  --oc-cyan: #18d8ff;
+  --oc-blue: #3b82ff;
+  --oc-pink: #ff2fb3;
+  --oc-purple: #8b5cf6;
+  --oc-green: #00e5a8;
+  --oc-amber: #ffb84d;
+  --oc-card-radius: 24px;
+  --oc-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255,255,255,0.09);
+}
+
+html, body, #root {
+  min-height: 100%;
+  background: #040614;
+}
+
+body {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(0,117,255,0.28), transparent 34%),
+    radial-gradient(circle at 78% 8%, rgba(255,0,128,0.18), transparent 30%),
+    radial-gradient(circle at 50% 104%, rgba(23,193,232,0.18), transparent 34%),
+    linear-gradient(135deg, #050713 0%, #080b21 44%, #0b102c 100%) !important;
+}
+
+body::before {
+  opacity: 0.82 !important;
+  filter: saturate(1.3) contrast(1.12);
+}
+
+body::after {
+  background:
+    linear-gradient(180deg, rgba(4,6,20,0.18) 0%, rgba(4,6,20,0.52) 55%, rgba(4,6,20,0.86) 100%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.018) 0, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 110px) !important;
+}
+
+.app-layout { min-height: 100vh; }
+
+.main-content {
+  width: calc(100vw - var(--sidebar-width));
+  min-height: 100vh;
+  padding: 18px 28px 28px !important;
+  margin-left: var(--sidebar-width) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.main-content::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 0 var(--sidebar-width);
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 38%, rgba(24,216,255,0.05) 38.15%, transparent 38.55%),
+    linear-gradient(63deg, transparent 0 69%, rgba(255,47,179,0.045) 69.15%, transparent 69.6%);
+  z-index: -1;
+}
+
+/* Premium sidebar */
+.sidebar {
+  width: var(--sidebar-width) !important;
+  padding: 22px 18px !important;
+  background:
+    linear-gradient(180deg, rgba(5, 8, 27, 0.98), rgba(6, 9, 33, 0.92)),
+    radial-gradient(circle at 40% 0%, rgba(24,216,255,0.14), transparent 44%) !important;
+  border-right: 1px solid rgba(105, 130, 255, 0.18) !important;
+  box-shadow: 20px 0 80px rgba(0, 0, 0, 0.36), inset -1px 0 0 rgba(255,255,255,0.04);
+}
+
+.sidebar-logo {
+  padding: 16px 10px 24px !important;
+  margin-bottom: 18px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.sidebar-logo-name {
+  font-size: 19px !important;
+  letter-spacing: 2.5px !important;
+  text-shadow: 0 0 22px rgba(24,216,255,0.45);
+}
+
+.sidebar-logo-subtitle {
+  max-width: 180px !important;
+  font-size: 9.5px !important;
+  color: rgba(255,255,255,0.58) !important;
+}
+
+.sidebar-nav { gap: 8px !important; }
+.sidebar-nav-item,
+.nav-item,
+.sidebar a,
+.sidebar button {
+  min-height: 46px;
+  border-radius: 14px !important;
+  color: rgba(255,255,255,0.72) !important;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.sidebar-nav-item:hover,
+.nav-item:hover,
+.sidebar a:hover,
+.sidebar button:hover {
+  transform: translateX(4px);
+  background: linear-gradient(90deg, rgba(24,216,255,0.11), rgba(139,92,246,0.08)) !important;
+  box-shadow: inset 0 0 0 1px rgba(24,216,255,0.13);
+}
+
+.sidebar-nav-item.active,
+.nav-item.active,
+.sidebar .active {
+  color: #fff !important;
+  background: linear-gradient(310deg, #7c3aed 0%, #ff0080 62%, #ff45c8 100%) !important;
+  box-shadow: 0 12px 30px rgba(255,0,128,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset !important;
+}
+
+.page-header {
+  margin-bottom: 20px !important;
+  min-height: 42px;
+}
+
+.page-title,
+.dashboard-title,
+.trading-page .page-title {
+  font-size: clamp(22px, 1.45vw, 32px) !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.04em;
+  color: #fff !important;
+  text-shadow: 0 0 34px rgba(24,216,255,0.22);
+}
+
+/* Shared professional glass cards */
+.glass-card,
+.stat-card,
+.agent-status-card,
+.priority-panel,
+.bottom-card,
+.chart-card,
+.trading-overview-grid > *,
+.oauth-status-card,
+.dashboard-main-grid > *,
+.dashboard-bottom-grid > *,
+.comms-layout,
+.channel-sidebar,
+.message-thread,
+.ai-city-panel,
+.ai-city-card,
+[class*="card"] {
+  border-color: var(--oc-border) !important;
+  background:
+    linear-gradient(180deg, rgba(28, 36, 87, 0.76), rgba(13, 18, 50, 0.66)) !important;
+  box-shadow: var(--oc-card-shadow) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+}
+
+.stat-card,
+.agent-status-card,
+.priority-panel,
+.bottom-card,
+.chart-card,
+.comms-layout {
+  border-radius: var(--oc-card-radius) !important;
+}
+
+/* Dashboard: make the content area feel like a full command center */
+.dashboard-page {
+  min-height: calc(100vh - 46px) !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(270px, 1.1fr) minmax(250px, 1fr) !important;
+  gap: 18px !important;
+}
+
+.stat-cards-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  margin-bottom: 0 !important;
+}
+
+.stat-card {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -50px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(24,216,255,0.23), transparent 65%);
+}
+
+.stat-card-value,
+.stat-value {
+  font-size: clamp(34px, 2.4vw, 48px) !important;
+  line-height: 1 !important;
+}
+
+.dashboard-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.32fr) !important;
+  gap: 18px !important;
+  margin-bottom: 0 !important;
+  min-height: 270px !important;
+}
+
+.agent-status-card,
+.priority-panel { min-height: 100% !important; }
+
+.agents-grid {
+  grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.agent-chip {
+  min-height: 70px;
+  padding: 13px 14px !important;
+  border: 1px solid rgba(130, 156, 255, 0.18) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.025)) !important;
+}
+
+.agent-chip-name,
+.agent-name,
+.channel-name,
+.channel-label,
+.channel-title {
+  color: rgba(255,255,255,0.96) !important;
+  text-shadow: 0 0 12px rgba(24,216,255,0.16);
+}
+
+.agent-chip-status,
+.agent-activity { color: rgba(255,255,255,0.58) !important; }
+
+.dashboard-bottom-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  margin-bottom: 0 !important;
+  min-height: 250px !important;
+}
+
+.bottom-card { min-height: 250px !important; }
+
+/* Agent Comms: fix invisible names and give the page a professional chat console layout */
+.comms-page {
+  height: calc(100vh - 42px) !important;
+  min-height: 760px !important;
+  display: flex !important;
+}
+
+.comms-layout {
+  flex: 1 !important;
+  min-height: 0 !important;
+  border-radius: 26px !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(120deg, rgba(13,18,50,0.82), rgba(15,21,56,0.66)),
+    radial-gradient(circle at 25% 20%, rgba(24,216,255,0.09), transparent 40%) !important;
+}
+
+.channel-sidebar {
+  width: clamp(300px, 18vw, 360px) !important;
+  background: linear-gradient(180deg, rgba(5,8,30,0.94), rgba(10,14,42,0.92)) !important;
+  border-right: 1px solid rgba(126,151,255,0.18) !important;
+}
+
+.channel-sidebar-header {
+  min-height: 74px;
+  padding: 18px 20px !important;
+  font-size: 16px !important;
+  color: #fff !important;
+}
+
+.channel-search input {
+  height: 42px !important;
+  color: #fff !important;
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(126,151,255,0.2) !important;
+}
+
+.channel-category-label {
+  padding: 16px 18px 7px !important;
+  color: rgba(255,255,255,0.46) !important;
+}
+
+.channel-item,
+.channel-item button,
+.channel-list button,
+.agent-channel,
+.channel-row {
+  width: auto !important;
+  min-height: 38px !important;
+  margin: 4px 10px !important;
+  padding: 9px 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: rgba(255,255,255,0.045) !important;
+  border: 1px solid rgba(255,255,255,0.075) !important;
+  border-radius: 13px !important;
+  color: rgba(255,255,255,0.78) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-shadow: none !important;
+}
+
+.channel-item *,
+.channel-list button *,
+.agent-channel *,
+.channel-row * {
+  color: inherit !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.channel-item:hover,
+.channel-list button:hover,
+.agent-channel:hover,
+.channel-row:hover {
+  color: #fff !important;
+  background: linear-gradient(90deg, rgba(24,216,255,0.13), rgba(255,47,179,0.08)) !important;
+  border-color: rgba(24,216,255,0.26) !important;
+  transform: translateX(3px);
+}
+
+.channel-item.active,
+.channel-list button.active,
+.agent-channel.active,
+.channel-row.active {
+  color: #fff !important;
+  background: linear-gradient(310deg, rgba(23,193,232,0.24), rgba(0,117,255,0.18)) !important;
+  border-color: rgba(24,216,255,0.42) !important;
+  box-shadow: 0 0 24px rgba(24,216,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+}
+
+.channel-hash { color: var(--oc-cyan) !important; opacity: 1 !important; }
+
+.message-thread {
+  min-width: 0;
+  background:
+    linear-gradient(180deg, rgba(10,14,40,0.54), rgba(8,11,31,0.72)),
+    radial-gradient(circle at 54% 15%, rgba(139,92,246,0.09), transparent 34%) !important;
+}
+
+.thread-header {
+  min-height: 74px;
+  padding: 18px 22px !important;
+  background: rgba(255,255,255,0.025) !important;
+}
+
+.message-list,
+.messages-container,
+.thread-messages {
+  flex: 1 !important;
+  min-height: 0 !important;
+  padding: 22px !important;
+}
+
+.message-input-row,
+.message-composer,
+.composer {
+  margin: 16px !important;
+  min-height: 56px !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+}
+
+/* Trading: fill the full page and look like a real command terminal */
+.trading-page {
+  min-height: calc(100vh - 42px) !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto minmax(360px, 1fr) !important;
+  gap: 18px !important;
+}
+
+.ticker-banner {
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 0 !important;
+  background: rgba(255,255,255,0.055) !important;
+  border-color: rgba(126,151,255,0.18) !important;
+}
+
+.trading-tabs {
+  margin-bottom: 0 !important;
+  width: fit-content;
+  height: 48px;
+  align-items: center;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.055) !important;
+}
+
+.trading-overview-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.8fr) !important;
+  gap: 18px !important;
+  min-height: 360px !important;
+  margin-bottom: 0 !important;
+}
+
+.chart-card,
+.trading-overview-grid > * {
+  min-height: 360px !important;
+}
+
+.chart-canvas-area,
+.chart-placeholder,
+.trading-chart {
+  min-height: 270px !important;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.4)),
+    linear-gradient(rgba(24,216,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24,216,255,0.07) 1px, transparent 1px) !important;
+  background-size: auto, 44px 44px, 44px 44px !important;
+  border: 1px solid rgba(24,216,255,0.16) !important;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.28);
+}
+
+/* AI City shell polish; canvas renderer remains in JSX */
+.ai-city-page,
+.aicity-page,
+.ai-city-shell {
+  min-height: calc(100vh - 42px) !important;
+}
+
+.ai-city-container,
+.city-viewport,
+.ai-city-canvas-wrap,
+.ai-city-card {
+  border-radius: 28px !important;
+  border: 1px solid rgba(24,216,255,0.22) !important;
+  background:
+    linear-gradient(180deg, rgba(15,22,58,0.72), rgba(6,10,31,0.82)),
+    radial-gradient(circle at 50% 0%, rgba(24,216,255,0.11), transparent 44%) !important;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.48), 0 0 70px rgba(24,216,255,0.08) !important;
+}
+
+/* Useful responsive rules */
+@media (max-width: 1300px) {
+  :root { --sidebar-width: 238px; }
+  .dashboard-main-grid,
+  .trading-overview-grid { grid-template-columns: 1fr !important; }
+  .dashboard-bottom-grid { grid-template-columns: 1fr 1fr !important; }
+  .channel-sidebar { width: 286px !important; }
+}
+
+@media (max-width: 900px) {
+  :root { --sidebar-width: 0px; }
+  .sidebar { transform: translateX(-100%); }
+  .main-content { margin-left: 0 !important; width: 100vw !important; padding: 16px !important; }
+  .stat-cards-row,
+  .dashboard-bottom-grid { grid-template-columns: 1fr !important; }
+  .comms-layout { flex-direction: column !important; }
+  .channel-sidebar { width: 100% !important; max-height: 320px; }
+}

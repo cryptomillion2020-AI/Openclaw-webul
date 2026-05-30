@@ -1,90 +1,73 @@
 /**
  * App.jsx — OpenClaw Master Workflow UI
- * Phase 5 Item 2 — v2.0 (4 control surfaces + websocket backend)
+ * Vision UI Dashboard React exact implementation
  *
- * Surfaces:
- *   1. Kill Switch        — halt QUANT activity (modal confirmation)
- *   2. Mode 3 Toggle      — inert until Phase 6 Item 6
- *   3. OAuth Status       — auth-mode per agent (placeholder: auth-profiles.json)
- *   4. Agent Status       — live bus activity dashboard
+ * Pages:
+ *   1. Dashboard    — Main dashboard (stat cards, agent grid, OAuth table)
+ *   2. Agent Comms  — MS Teams-style channel communication
+ *   3. Trading      — Trading platform (4 sub-tabs, fixed ControlsCluster)
+ *   4. AI-City      — HARD-BLOCKED (requires COSMOS sprites + SEVIN sign-off)
+ *   5. Private VAULT— Secure agent vault
+ *   6. Team Research— 12-agent non-VAULT research pool
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { KillSwitch }  from './components/KillSwitch';
-import { Mode3Toggle } from './components/Mode3Toggle';
-import { OAuthStatus } from './components/OAuthStatus';
-import { AgentStatus } from './components/AgentStatus';
+import { useState, useEffect, useCallback } from 'react';
+import { useWebSocket }   from './hooks/useWebSocket';
+import { Sidebar }         from './components/Sidebar';
+import { Dashboard }       from './pages/Dashboard';
+import { AgentComms }      from './pages/AgentComms';
+import { Trading }         from './pages/Trading';
+import AiCityPage          from './pages/AiCityPage';
+import { PrivateVault }    from './pages/PrivateVault';
+import { TeamResearch }    from './pages/TeamResearch';
 import './App.css';
 
-// Configurable websocket URL (default: localhost for local staging)
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8765';
-
-// Kill-switch polling interval (ms)
-const KILL_POLL_MS = 5000;
+// Channels the dashboard subscribes to on connect
+const SUBSCRIBE_CHANNELS = ['kill_switch', 'bus_activity', 'oauth_status', 'mode3'];
 
 export default function App() {
-  const [connected,   setConnected]   = useState(false);
-  const [killActive,  setKillActive]  = useState(false);
-  const [oauthStatus, setOauthStatus] = useState({});
-  const [busActivity, setBusActivity] = useState([]);
-  const [lastUpdate,  setLastUpdate]  = useState(null);
-  const wsRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [killActive,      setKillActive]      = useState(false);
+  const [mode3Conditions, setMode3Conditions] = useState({
+    kill_switch_inactive: false,
+    paper_mode_confirmed: false,
+    stan_audit_passed:    false,
+    quant_proposal_approved: false,
+    architect_authorized: false,
+  });
+  const [mode3Enabled,    setMode3Enabled]    = useState(false);
+  const [oauthStatus,     setOauthStatus]     = useState({});
+  const [busActivity,     setBusActivity]     = useState([]);
+  const [lastUpdate,      setLastUpdate]      = useState(null);
 
   // ---------------------------------------------------------------------------
-  // Websocket lifecycle
-  // ---------------------------------------------------------------------------
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setConnected(true);
-      console.log('[WS] Connected to OpenClaw backend');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        handleMessage(msg);
-      } catch (e) {
-        console.warn('[WS] Parse error:', e);
-      }
-    };
-
-    ws.onclose = () => {
-      setConnected(false);
-      console.log('[WS] Disconnected — reconnecting in 3s');
-      setTimeout(connect, 3000);
-    };
-
-    ws.onerror = (err) => {
-      console.warn('[WS] Error:', err);
-    };
-  }, []);
-
-  useEffect(() => {
-    connect();
-    return () => wsRef.current?.close();
-  }, [connect]);
-
-  // ---------------------------------------------------------------------------
-  // Message handler
+  // Message handler (passed to useWebSocket)
   // ---------------------------------------------------------------------------
   const handleMessage = useCallback((msg) => {
     setLastUpdate(new Date().toISOString());
 
     if (msg.type === 'full_state') {
       setKillActive(msg.kill_switch || false);
+      setMode3Conditions(msg.mode3_conditions || {
+        kill_switch_inactive: false,
+        paper_mode_confirmed: false,
+        stan_audit_passed:    false,
+        quant_proposal_approved: false,
+        architect_authorized: false,
+      });
+      setMode3Enabled(msg.mode3_enabled || false);
       setOauthStatus(msg.oauth_status || {});
       setBusActivity(msg.bus_activity || []);
     } else if (msg.type === 'kill_switch_update') {
       setKillActive(msg.active);
+    } else if (msg.type === 'mode3_conditions_update') {
+      setMode3Conditions(msg.mode3_conditions || {});
+      setMode3Enabled(msg.mode3_enabled || false);
+    } else if (msg.type === 'mode3_confirm_error') {
+      console.warn('[Mode3] Confirm error:', msg.error);
     } else if (msg.type === 'bus_activity_delta') {
       setBusActivity(prev => {
         const combined = [...prev, ...(msg.events || [])];
-        // Deduplicate by file path, keep latest
         const seen = new Map();
         combined.forEach(e => { if (!seen.has(e.file) || seen.get(e.file).mtime < e.mtime) seen.set(e.file, e); });
         return [...seen.values()].sort((a, b) => a.mtime - b.mtime).slice(-50);
@@ -93,67 +76,75 @@ export default function App() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Kill-switch poll (5s — belt-and-suspenders in case WS misses an update)
+  // WebSocket hook
+  // ---------------------------------------------------------------------------
+  const { connected, send } = useWebSocket({
+    onMessage: handleMessage,
+    channels: SUBSCRIBE_CHANNELS,
+    autoConnect: true,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Kill-switch poll (5s — belt-and-suspenders)
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const timer = setInterval(() => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'request_full_state' }));
-      }
-    }, KILL_POLL_MS);
+      send({ type: 'request_full_state' });
+    }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [send]);
 
   // ---------------------------------------------------------------------------
-  // Send helper
+  // Navigation
   // ---------------------------------------------------------------------------
-  const sendWs = useCallback((msg) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
-    } else {
-      console.warn('[WS] Cannot send — not connected');
+  const pageProps = {
+    killActive,
+    mode3Conditions,
+    mode3Enabled,
+    onSend: send,
+    busActivity,
+    connected,
+    oauthStatus,
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'dashboard': return <Dashboard {...pageProps} />;
+      case 'comms':     return <AgentComms onSend={send} />;
+      case 'trading':   return <Trading {...pageProps} />;
+      case 'ai-city':   return <AiCityPage />;
+      case 'vault':     return <PrivateVault />;
+      case 'research':  return <TeamResearch onSend={send} />;
+      default:          return <Dashboard {...pageProps} />;
     }
-  }, []);
+  };
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>🦅 OpenClaw Master Workflow</h1>
-        <div className="header-status">
-          <span className={`ws-indicator ${connected ? 'ws-connected' : 'ws-disconnected'}`}>
-            {connected ? '🟢 Live' : '🔴 Offline'}
-          </span>
-          {lastUpdate && (
-            <span className="last-update">
-              Updated {new Date(lastUpdate).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-      </header>
+    <div className="app-layout">
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        oauthStatus={oauthStatus}
+        connected={connected}
+      />
 
-      <main className="dashboard-grid">
-        {/* Surface 1 — Kill Switch */}
-        <KillSwitch active={killActive} onSend={sendWs} />
+      <div className="main-content">
+        {renderPage()}
 
-        {/* Surface 2 — Mode 3 Toggle (inert) */}
-        <Mode3Toggle />
-
-        {/* Surface 3 — OAuth Status */}
-        <OAuthStatus oauthStatus={oauthStatus} />
-
-        {/* Surface 4 — Agent Status Dashboard */}
-        <AgentStatus busActivity={busActivity} connected={connected} />
-      </main>
-
-      <footer className="app-footer">
-        <span>OpenClaw Master Workflow · Phase 5 · v2.0</span>
-        <span className="footer-note">
-          Production deploy requires Architect credential session — see PHASE-5-WEBUI-DEPLOY.md
-        </span>
-      </footer>
+        <footer style={{
+          marginTop: 'auto',
+          padding: '16px 0 8px',
+          fontSize: '10px',
+          color: 'rgba(255,255,255,0.25)',
+          textAlign: 'center',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          OpenClaw Master Workflow · Phase 5 · v3.0
+        </footer>
+      </div>
     </div>
   );
 }

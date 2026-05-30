@@ -1,0 +1,9 @@
+name = "openclaw-ws-proxy"
+main = "index.js"
+compatibility_date = "2024-12-01"
+
+# Pure script worker — no static assets or Pages config
+# Routes directly on the sevinsolutions.com zone
+routes = [
+  { pattern = "app.sevinsolutions.com/ws*", zone_name = "sevinsolutions.com" }
+]

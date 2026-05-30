@@ -1,59 +1,31 @@
 /**
- * OAuthStatus.jsx — OAuth Status Indicator
- * Phase 5 Item 2 — Surface 3
- *
- * Placeholder until Phase 5 Item 3 telemetry wrapper lands.
- * Currently reads from auth-profiles.json via websocket backend.
- * Shows configured auth_mode per agent (not real-time actual_mode yet).
- *
- * When Item 3 ships: swap DATA_SOURCE to real telemetry endpoint.
- * The data source is configurable via the USE_TELEMETRY_SOURCE flag.
+ * OAuthStatus.jsx — OAuth / Auth Status Dashboard
+ * Uses pages.css table styles
  */
 
-// Configurable: swap to true when Phase 5 Item 3 telemetry is live
 const USE_TELEMETRY_SOURCE = false;
 
 const MODE_COLORS = {
-  claude_cli:   'green',
-  deepseek_api: 'green',
-  ollama_local: 'blue',
-  local_only:   'blue',
-  api_key:      'amber',
-  oauth:        'green',
-  FAILED:       'red',
-  unknown:      'grey',
+  claude_cli: '#01B574', deepseek_api: '#01B574', ollama_local: '#0075FF',
+  local_only: '#0075FF', api_key: '#FFB547', oauth: '#01B574',
+  FAILED: '#f53939', unknown: '#718096',
 };
 
 const MODE_LABELS = {
-  claude_cli:   'Claude CLI (subscription)',
-  deepseek_api: 'DeepSeek API',
-  ollama_local: 'Local Ollama',
-  local_only:   'Local Only (VAULT)',
-  api_key:      'API Key',
-  oauth:        'OAuth',
+  claude_cli: 'Claude CLI', deepseek_api: 'DeepSeek API',
+  ollama_local: 'Local Ollama', local_only: 'Local Only (VAULT)',
+  api_key: 'API Key', oauth: 'OAuth',
 };
-
-function statusDot(mode) {
-  const color = MODE_COLORS[mode] || 'grey';
-  return <span className={`status-dot status-${color}`} title={mode}>●</span>;
-}
 
 export function OAuthStatus({ oauthStatus }) {
   const entries = Object.entries(oauthStatus || {});
 
   return (
-    <div className="surface-card oauth-surface">
-      <h3>🔐 OAuth / Auth Status</h3>
-      <p className="surface-subtitle">
-        {USE_TELEMETRY_SOURCE
-          ? 'Live telemetry source (Item 3)'
-          : 'Configured mode from auth-profiles.json (placeholder until Item 3)'}
-      </p>
-
+    <div>
       {entries.length === 0 ? (
-        <p className="loading-text">Loading auth profiles…</p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', padding: '8px 0' }}>Loading auth profiles…</p>
       ) : (
-        <table className="oauth-table">
+        <table className="positions-table" style={{ marginTop: 8 }}>
           <thead>
             <tr>
               <th>Agent</th>
@@ -64,19 +36,27 @@ export function OAuthStatus({ oauthStatus }) {
           <tbody>
             {entries.map(([agent, data]) => (
               <tr key={agent}>
-                <td className="agent-name-cell">{agent.toUpperCase()}</td>
-                <td className="mode-cell">
-                  {statusDot(data.auth_mode)}
-                  {' '}
+                <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{agent.toUpperCase()}</td>
+                <td>
+                  <span style={{
+                    display: 'inline-block',
+                    width: 7, height: 7,
+                    borderRadius: '50%',
+                    background: MODE_COLORS[data.auth_mode] || '#718096',
+                    boxShadow: `0 0 6px ${MODE_COLORS[data.auth_mode] || '#718096'}`,
+                    marginRight: 6,
+                    verticalAlign: 'middle',
+                  }} />
                   {MODE_LABELS[data.auth_mode] || data.auth_mode}
                 </td>
-                <td className="status-cell">
-                  {data.vault_carve_out
-                    ? <span className="badge badge-vault">VAULT</span>
-                    : data.fallback_mode !== 'none'
-                      ? <span className="badge badge-fallback">fallback: {data.fallback_mode}</span>
-                      : <span className="badge badge-ok">OK</span>
-                  }
+                <td>
+                  {data.vault_carve_out ? (
+                    <span className="status-pill pill-complete">VAULT</span>
+                  ) : data.fallback_mode !== 'none' ? (
+                    <span className="status-pill pill-pending">fallback: {data.fallback_mode}</span>
+                  ) : (
+                    <span className="status-pill pill-complete">OK</span>
+                  )}
                 </td>
               </tr>
             ))}
