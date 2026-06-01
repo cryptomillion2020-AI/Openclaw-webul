@@ -12,7 +12,7 @@ import { useEffect, useRef } from 'react';
 
 // Placeholder colors for dev-mode (agent color palette)
 const AGENT_COLORS = {
-  SEVIN:    0xF57F17,
+  SEVIN:    0xFFD700,
   OVERSEER: 0x1565C0,
   ELEVIN:   0x1B5E20,
   TIKA:     0x7B1FA2,

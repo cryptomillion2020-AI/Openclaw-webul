@@ -26,7 +26,18 @@ import './App.css';
 const SUBSCRIBE_CHANNELS = ['kill_switch', 'bus_activity', 'oauth_status', 'mode3'];
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // Initialize page from URL query param (e.g., ?page=ai-city)
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get('page');
+      const validPages = ['dashboard', 'comms', 'trading', 'ai-city', 'vault', 'research'];
+      if (page && validPages.includes(page)) {
+        return page;
+      }
+    }
+    return 'dashboard';
+  });
   const [killActive,      setKillActive]      = useState(false);
   const [mode3Conditions, setMode3Conditions] = useState({
     kill_switch_inactive: false,

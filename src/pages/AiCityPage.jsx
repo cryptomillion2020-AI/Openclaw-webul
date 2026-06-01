@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { AiCityOverlay } from '../components/AiCity/AiCityOverlay';
 
 // ============================================
 // AI-City — Dynamic Living City
@@ -89,6 +90,20 @@ export default function AiCityPage({ wsData }) {
 
   const [isNight, setIsNight]   = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
+
+  // Debug cycle override: ?debug-cycle=1 auto-toggles day/night every 4s
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug-cycle') === '1') {
+        console.log('[AiCityPage] Debug cycle activated — auto-toggling day/night every 4s');
+        const iv = setInterval(() => {
+          setIsNight(prev => !prev);
+        }, 4000);
+        return () => clearInterval(iv);
+      }
+    }
+  }, []);
 
   // Core city state: array of placed buildings (persists across task changes)
   // Each entry: { id, taskId, agentId, label, progress, status, plotPos, style, permanent }
@@ -733,6 +748,26 @@ export default function AiCityPage({ wsData }) {
       <div style={{flex:1,display:"flex",gap:12,minHeight:0}}>
         <div style={{flex:1,borderRadius:20,overflow:"hidden",position:"relative",background:"rgba(0,0,0,0.45)",border:"1px solid rgba(255,255,255,0.1)"}}>
           <canvas ref={canvasRef} style={{width:"100%",height:"100%",display:"block"}}/>
+          {/* Phase 2: PixiJS COSMOS agent sprite overlay */}
+          <AiCityOverlay
+            agents={Object.entries(agentPositions).map(([id, pos]) => {
+              const building = cityBuildings.find(b => b.agentId === id && !b.permanent);
+              let state = 'idle_day';
+              if (building) {
+                state = building.status === 'active' ? 'active'
+                      : building.status === 'pending' ? 'pending' : 'idle_day';
+              } else {
+                state = isNight ? 'idle_night' : 'idle_day';
+              }
+              return {
+                id,
+                name: id,
+                gridPos: { tx: Math.round(pos.x), ty: Math.round(pos.y) },
+                state,
+              };
+            })}
+            timeOfDay={isNight ? 'night' : 'day'}
+          />
           {isNight&&<div style={{position:"absolute",top:14,right:18,fontSize:26,filter:"drop-shadow(0 0 10px rgba(150,200,255,0.6))"}}>🌙</div>}
         </div>
 

@@ -8,10 +8,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { applyDebugCycleOverride } from '../components/AiCity/DebugStateCycler';
 
 // Agent color palette (mirrors AiCityAssetLoader)
 const AGENT_COLORS = {
-  sevin:     '#F57F17',
+  sevin:     '#FFD700',
   overseer:  '#1565C0',
   elevin:    '#1B5E20',
   tika:      '#7B1FA2',
@@ -74,7 +75,19 @@ export function useCityData({ connected = false } = {}) {
   // Cycle agent states periodically (stub behavior — simulates real activity)
   // -----------------------------------------------------------------------
   useEffect(() => {
-    // Rotate agent states every 8s for demo purposes
+    // Check for debug-cycle override BEFORE setting up the normal interval
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug-cycle') === '1') {
+        console.log('[useCityData] Debug cycle override active — skipping normal interval');
+        const cleanup = applyDebugCycleOverride(setAgentState, setTimeOfDay);
+        return () => {
+          if (typeof cleanup === 'function') cleanup();
+        };
+      }
+    }
+
+    // Normal stub cycle: Rotate agent states every 8s for demo purposes
     intervalRef.current = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
@@ -98,17 +111,25 @@ export function useCityData({ connected = false } = {}) {
     }, 8000);
 
     return () => clearInterval(intervalRef.current);
-  }, []);
+  }, [setAgentState, setTimeOfDay]);
 
   // -----------------------------------------------------------------------
-  // Cycle day/night (every 30s)
+  // Cycle day/night (every 30s) — skipped if debug-cycle is active
   // -----------------------------------------------------------------------
   useEffect(() => {
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug-cycle') === '1') {
+        console.log('[useCityData] Debug cycle active — skipping day/night timer');
+        return; // DebugStateCycler handles timeOfDay
+      }
+    }
+
     const dayNightTimer = setInterval(() => {
       setTimeOfDay((prev) => (prev === 'day' ? 'night' : 'day'));
     }, 30000);
     return () => clearInterval(dayNightTimer);
-  }, []);
+  }, [setTimeOfDay]);
 
   // -----------------------------------------------------------------------
   // API
