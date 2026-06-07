@@ -25,6 +25,46 @@ import './App.css';
 // Channels the dashboard subscribes to on connect
 const SUBSCRIBE_CHANNELS = ['kill_switch', 'bus_activity', 'oauth_status', 'mode3'];
 
+// Wave 4b-A: per-channel comms ring buffer cap
+const COMMS_RING_LIMIT = 200;
+
+// Wave 4b-A: bus-dir → comms-channel fallback (used only when msg.channel absent).
+// Mapping preserved verbatim from prior AgentComms-internal helper.
+function dirToCommsChannel(dir) {
+  const map = {
+    'webui-to-sevin':       'sevin',
+    'webui-to-overseer':    'overseer',
+    'webui-to-elevin':      'elevin',
+    'webui-to-all-agents':  'all-agents',
+    'webui-to-architect':   'architect',
+    'webui-to-system':      'system',
+    'webui-to-monitoring':  'oauth-failures',
+    'webui-to-quant':       'quant-signals',
+    'elevin-to-overseer':   'overseer',
+    'overseer-to-sevin':    'sevin',
+    'sevin-to-overseer':    'overseer',
+    'quant-to-overseer':    'quant-signals',
+    'stan-to-overseer':     'overseer',
+    'discord-outbound':     'deployments',
+  };
+  return map[dir] || null;
+}
+
+// Wave 4b-A: single shape for all comms_delta consumers
+function normalizeCommsDelta(msg) {
+  return {
+    file:            msg.file,
+    dir:             msg.dir,
+    from:            msg.from || 'WEBUI',
+    mtime:           msg.mtime || (msg.ts ? Date.parse(msg.ts) / 1000 : Date.now() / 1000),
+    ts:              msg.ts,
+    preview:         msg.body,
+    channel:         msg.channel || dirToCommsChannel(msg.dir),
+    clientMessageId: msg.clientMessageId || null,
+    pending:         false,
+  };
+}
+
 export default function App() {
   // Initialize page from URL query param (e.g., ?page=ai-city)
   const [currentPage, setCurrentPage] = useState(() => {
@@ -49,6 +89,7 @@ export default function App() {
   const [mode3Enabled,    setMode3Enabled]    = useState(false);
   const [oauthStatus,     setOauthStatus]     = useState({});
   const [busActivity,     setBusActivity]     = useState([]);
+  const [commsByChannel,  setCommsByChannel]  = useState({});
   const [tasks,           setTasks]           = useState([]);
   const [lastUpdate,      setLastUpdate]      = useState(null);
 
@@ -101,20 +142,45 @@ export default function App() {
       });
     } else if (msg.type === 'comms_delta') {
       // Immediate Comms message broadcast (includes full body)
-      const event = {
-        file:    msg.file,
-        dir:     msg.dir,
-        from:    msg.from || 'WEBUI',
-        mtime:   msg.mtime || (Date.parse(msg.ts) / 1000),
-        ts:      msg.ts,
-        preview: msg.body,
-        channel: msg.channel,
-      };
+      const event = normalizeCommsDelta(msg);
+      // Backwards-compat: keep busActivity in sync for non-Comms consumers
       setBusActivity(prev => {
-        // Avoid dupes: same filename means same message
-        if (prev.some(e => e.file === msg.file && e.dir === msg.dir)) return prev;
-        return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
+        if (prev.some(e => e.file === event.file && e.dir === event.dir)) return prev;
+        const compatEvent = {
+          file: event.file, dir: event.dir, from: event.from,
+          mtime: event.mtime, ts: event.ts, preview: event.preview,
+          channel: event.channel,
+        };
+        return [...prev, compatEvent].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
+      // Per-channel ring with pending-echo reconciliation
+      const channel = event.channel;
+      if (channel) {
+        setCommsByChannel(prev => {
+          const existing = prev[channel] || [];
+          // Server-event dedup by (file, dir) — drop second copy of same bus file
+          if (existing.some(e => !e.pending && e.file === event.file && e.dir === event.dir)) {
+            return prev;
+          }
+          // Reconcile with pending echo: prefer clientMessageId match, fall back to exact body
+          const pendingIdx = existing.findIndex(e =>
+            e.pending && (
+              (event.clientMessageId && e.clientMessageId === event.clientMessageId) ||
+              (e.preview === event.preview)
+            )
+          );
+          let next;
+          if (pendingIdx !== -1) {
+            next = [...existing];
+            next[pendingIdx] = event;
+          } else {
+            next = [...existing, event];
+          }
+          next.sort((a, b) => a.mtime - b.mtime);
+          if (next.length > COMMS_RING_LIMIT) next = next.slice(-COMMS_RING_LIMIT);
+          return { ...prev, [channel]: next };
+        });
+      }
     } else if (msg.type === 'research_delta') {
       // Immediate Research query broadcast (includes full text)
       const event = {
@@ -144,6 +210,32 @@ export default function App() {
   });
 
   // ---------------------------------------------------------------------------
+  // Wave 4b-A: local-echo enqueue for AgentComms
+  // ---------------------------------------------------------------------------
+  const addLocalEcho = useCallback((channel, body, clientMessageId) => {
+    if (!channel || !body) return;
+    const now = Date.now() / 1000;
+    const echo = {
+      file:            `pending-${clientMessageId}`,
+      dir:             'webui-pending',
+      from:            'You',
+      mtime:           now,
+      ts:              new Date(now * 1000).toISOString(),
+      preview:         body,
+      channel,
+      clientMessageId,
+      pending:         true,
+    };
+    setCommsByChannel(prev => {
+      const existing = prev[channel] || [];
+      let next = [...existing, echo];
+      next.sort((a, b) => a.mtime - b.mtime);
+      if (next.length > COMMS_RING_LIMIT) next = next.slice(-COMMS_RING_LIMIT);
+      return { ...prev, [channel]: next };
+    });
+  }, []);
+
+  // ---------------------------------------------------------------------------
   // Kill-switch poll (5s — belt-and-suspenders)
   // ---------------------------------------------------------------------------
   useEffect(() => {
@@ -170,7 +262,7 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard': return <Dashboard {...pageProps} />;
-      case 'comms':     return <AgentComms onSend={send} busActivity={busActivity} connected={connected} />;
+      case 'comms':     return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
       case 'trading':   return <Trading {...pageProps} />;
       case 'ai-city':   return <AiCityPage />;
       case 'vault':     return <PrivateVault />;
