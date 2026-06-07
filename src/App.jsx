@@ -49,6 +49,7 @@ export default function App() {
   const [mode3Enabled,    setMode3Enabled]    = useState(false);
   const [oauthStatus,     setOauthStatus]     = useState({});
   const [busActivity,     setBusActivity]     = useState([]);
+  const [tasks,           setTasks]           = useState([]);
   const [lastUpdate,      setLastUpdate]      = useState(null);
 
   // ---------------------------------------------------------------------------
@@ -69,6 +70,21 @@ export default function App() {
       setMode3Enabled(msg.mode3_enabled || false);
       setOauthStatus(msg.oauth_status || {});
       setBusActivity(msg.bus_activity || []);
+      setTasks(msg.tasks || []);
+    } else if (msg.type === 'task_update') {
+      // Merge changed tasks into existing tasks array
+      setTasks(prev => {
+        const updated = [...prev];
+        (msg.tasks || []).forEach(updatedTask => {
+          const idx = updated.findIndex(t => t.id === updatedTask.id);
+          if (idx !== -1) {
+            updated[idx] = { ...updated[idx], ...updatedTask };
+          } else {
+            updated.push(updatedTask);
+          }
+        });
+        return updated;
+      });
     } else if (msg.type === 'kill_switch_update') {
       setKillActive(msg.active);
     } else if (msg.type === 'mode3_conditions_update') {
@@ -82,6 +98,38 @@ export default function App() {
         const seen = new Map();
         combined.forEach(e => { if (!seen.has(e.file) || seen.get(e.file).mtime < e.mtime) seen.set(e.file, e); });
         return [...seen.values()].sort((a, b) => a.mtime - b.mtime).slice(-50);
+      });
+    } else if (msg.type === 'comms_delta') {
+      // Immediate Comms message broadcast (includes full body)
+      const event = {
+        file:    msg.file,
+        dir:     msg.dir,
+        from:    msg.from || 'WEBUI',
+        mtime:   msg.mtime || (Date.parse(msg.ts) / 1000),
+        ts:      msg.ts,
+        preview: msg.body,
+        channel: msg.channel,
+      };
+      setBusActivity(prev => {
+        // Avoid dupes: same filename means same message
+        if (prev.some(e => e.file === msg.file && e.dir === msg.dir)) return prev;
+        return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
+      });
+    } else if (msg.type === 'research_delta') {
+      // Immediate Research query broadcast (includes full text)
+      const event = {
+        file:    msg.file,
+        dir:     msg.dir,
+        from:    msg.from || 'WEBUI',
+        mtime:   msg.mtime || (Date.parse(msg.ts) / 1000),
+        ts:      msg.ts,
+        preview: msg.text,
+        routing: msg.routing,
+        selected_agents: msg.selected_agents,
+      };
+      setBusActivity(prev => {
+        if (prev.some(e => e.file === msg.file && e.dir === msg.dir)) return prev;
+        return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
     }
   }, []);
@@ -116,16 +164,17 @@ export default function App() {
     busActivity,
     connected,
     oauthStatus,
+    tasks,
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard': return <Dashboard {...pageProps} />;
-      case 'comms':     return <AgentComms onSend={send} />;
+      case 'comms':     return <AgentComms onSend={send} busActivity={busActivity} connected={connected} />;
       case 'trading':   return <Trading {...pageProps} />;
       case 'ai-city':   return <AiCityPage />;
       case 'vault':     return <PrivateVault />;
-      case 'research':  return <TeamResearch onSend={send} />;
+      case 'research':  return <TeamResearch onSend={send} busActivity={busActivity} connected={connected} />;
       default:          return <Dashboard {...pageProps} />;
     }
   };

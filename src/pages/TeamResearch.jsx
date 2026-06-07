@@ -1,9 +1,13 @@
 /**
  * TeamResearch.jsx — Page 6: Team Research
  * Uses pages.css class names — 12-agent pool with routing
+ *
+ * Data binding (Stage 2, Track 1):
+ *   READ:  filters busActivity for research-related events → renders thread
+ *   SEND:  onSend({ type: 'research_query', text, routing, selected_agents }) → backend writes bus file
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const ALL_AGENTS = [
   { id: 'SEVIN', label: 'SEVIN — System Architect', color: '#F57F17' },
@@ -22,10 +26,70 @@ const ALL_AGENTS = [
 
 const ROUTING_MODES = ['Ask SEVIN', 'Select agents', 'Broadcast all'];
 
-export function TeamResearch({ onSend }) {
+// Map bus directory names to research target
+function researchDirLabel(dir) {
+  const map = {
+    'webui-to-sevin':       'SEVIN',
+    'webui-to-all-agents':  'Broadcast',
+    'webui-to-research':    'Research Pool',
+  };
+  return map[dir] || dir;
+}
+
+export function TeamResearch({ onSend, busActivity, connected }) {
   const [routingMode, setRoutingMode] = useState(0);
-  const [selectedAgents] = useState([]);
+  const [selectedAgents, setSelectedAgents] = useState([]);
   const [message, setMessage] = useState('');
+  const [threadMessages, setThreadMessages] = useState([]);
+  const threadEndRef = useRef(null);
+
+  // Toggle agent selection
+  const toggleAgent = (agentId) => {
+    setSelectedAgents(prev =>
+      prev.includes(agentId)
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
+
+  // Filter busActivity for research-related events
+  useEffect(() => {
+    if (!busActivity || !Array.isArray(busActivity)) return;
+    const researchEvents = busActivity
+      .filter(e =>
+        e.dir?.startsWith('webui-to-') ||
+        e.file?.includes('RESEARCH') ||
+        e.file?.includes('PROPOSAL') ||
+        e.from === 'SEVIN' || e.from === 'STAN' || e.from === 'QUANT'
+      )
+      .map(e => ({
+        from: e.from || 'System',
+        ts:   e.ts ? new Date(e.ts).toLocaleTimeString() : '',
+        body: e.preview || e.body || '(no content)',
+        dir:  researchDirLabel(e.dir),
+        mtime: e.mtime || 0,
+      }))
+      .sort((a, b) => a.mtime - b.mtime);
+    setThreadMessages(researchEvents);
+  }, [busActivity]);
+
+  // Auto-scroll
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [threadMessages]);
+
+  // Send handler
+  const handleSend = (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSend?.({
+      type: 'research_query',
+      text: trimmed,
+      routing: routingMode,
+      selected_agents: selectedAgents,
+    });
+    setMessage('');
+  };
 
   return (
     <div className="research-page">
@@ -49,8 +113,8 @@ export function TeamResearch({ onSend }) {
           <div
             key={agent.id}
             className={`agent-selector-chip${selectedAgents.includes(agent.id) ? ' active' : ''}`}
-            style={{ borderColor: selectedAgents.includes(agent.id) ? agent.color : 'rgba(255,255,255,0.1)' }}
-          >
+            style={{ borderColor: selectedAgents.includes(agent.id) ? agent.color : 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+            onClick={() => toggleAgent(agent.id)}>
             <span className="agent-dot" style={{ background: agent.color, boxShadow: `0 0 6px ${agent.color}` }} />
             {agent.id}
           </div>
@@ -83,10 +147,24 @@ export function TeamResearch({ onSend }) {
         {/* Thread area */}
         <div className="research-thread-area">
           <div className="research-thread-messages">
-            <div className="empty-state">
-              <div className="empty-state-icon">🔬</div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Select agent(s) and send a research query</p>
-            </div>
+            {threadMessages.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🔬</div>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Select agent(s) and send a research query</p>
+              </div>
+            ) : (
+              threadMessages.map((msg, i) => (
+                <div key={i} className="thread-message" style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="thread-msg-meta">
+                    <span className="thread-msg-author" style={{ fontSize: 12, fontWeight: 700 }}>{msg.from}</span>
+                    <span className="thread-msg-time" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>{msg.ts}</span>
+                    {msg.dir && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>via {msg.dir}</span>}
+                  </div>
+                  <div className="thread-msg-text" style={{ fontSize: 12, marginTop: 4 }}>{msg.body}</div>
+                </div>
+              ))
+            )}
+            <div ref={threadEndRef} />
           </div>
 
           <div className="research-action-bar">
@@ -103,13 +181,12 @@ export function TeamResearch({ onSend }) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && message.trim()) {
-                    onSend?.({ type: 'research_query', text: message.trim(), routing: routingMode });
-                    setMessage('');
+                  if (e.key === 'Enter') {
+                    handleSend(e.target.value);
                   }
                 }}
               />
-              <button className="research-send-btn">Send</button>
+              <button className="research-send-btn" onClick={() => handleSend(message)}>Send</button>
             </div>
           </div>
         </div>

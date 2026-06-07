@@ -15,6 +15,7 @@ export function Dashboard({
   busActivity,
   connected,
   oauthStatus,
+  tasks,
 }) {
   return (
     <div className="dashboard-page">
@@ -38,12 +39,12 @@ export function Dashboard({
           <div className="stat-card-label">Agents</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">0</div>
+          <div className="stat-card-value">{tasks ? tasks.filter(t => t.status === 'active' || t.status === 'pending').length : 0}</div>
           <div className="stat-card-label">Active Tasks</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">0</div>
-          <div className="stat-card-label">Proposals</div>
+          <div className="stat-card-value">{tasks ? tasks.filter(t => t.status === 'complete').length : 0}</div>
+          <div className="stat-card-label">Complete</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value">{busActivity?.length || 0}</div>

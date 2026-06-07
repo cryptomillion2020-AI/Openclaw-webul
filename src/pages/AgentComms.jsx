@@ -1,9 +1,13 @@
 /**
  * AgentComms.jsx — Page 2: Agent Communications
  * Uses pages.css class names — MS Teams-style layout
+ *
+ * Data binding (Stage 2, Track 1):
+ *   READ:  filters busActivity events by active channel → renders as messages
+ *   SEND:  onSend({ type: 'comms_message', channel, body }) → backend writes bus file → comms_delta broadcast
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const CHANNEL_CATEGORIES = {
   System:   ['status', 'deployments'],
@@ -13,9 +17,71 @@ const CHANNEL_CATEGORIES = {
   Directives: ['architect', 'sevin-directives'],
 };
 
-export function AgentComms({ onSend }) {
+// Map bus directory names to Comms channel names
+function dirToChannel(dir) {
+  const map = {
+    'webui-to-sevin':       'sevin',
+    'webui-to-overseer':    'overseer',
+    'webui-to-elevin':      'elevin',
+    'webui-to-all-agents':  'all-agents',
+    'webui-to-architect':   'architect',
+    'webui-to-system':      'system',
+    'webui-to-monitoring':  'oauth-failures',
+    'webui-to-quant':       'quant-signals',
+    'elevin-to-overseer':   'overseer',
+    'overseer-to-sevin':    'sevin',
+    'sevin-to-overseer':    'overseer',
+    'quant-to-overseer':    'quant-signals',
+    'stan-to-overseer':     'overseer',
+    'discord-outbound':     'deployments',
+  };
+  return map[dir] || null;
+}
+
+export function AgentComms({ onSend, busActivity, connected }) {
   const [activeChannel, setActiveChannel] = useState('status');
-  const [messages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Build messages from busActivity filtered by active channel
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    if (!busActivity || !Array.isArray(busActivity)) return;
+    const filtered = busActivity
+      .filter(e => {
+        const ch = e.channel || dirToChannel(e.dir);
+        return ch === activeChannel;
+      })
+      .map(e => ({
+        file: e.file,
+        dir:  e.dir,
+        from: e.from || 'System',
+        ts:   e.ts ? new Date(e.ts).toLocaleTimeString() : '',
+        body: e.preview || e.body || '(no content)',
+        mtime: e.mtime || 0,
+      }))
+      .sort((a, b) => a.mtime - b.mtime);
+    setMessages(filtered);
+  }, [busActivity, activeChannel]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Send handler (used by both Enter key and Send button)
+  const handleSend = (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSend?.({
+      type: 'comms_message',
+      channel: activeChannel,
+      body: trimmed,
+    });
+    setInputText('');
+  };
 
   return (
     <div className="comms-page">
@@ -83,20 +149,24 @@ export function AgentComms({ onSend }) {
           <div className="thread-input-area">
             <div className="thread-input-row">
               <input
+                ref={inputRef}
                 type="text"
                 placeholder={`Message #${activeChannel}...`}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    onSend?.({
-                      type: 'comms_message',
-                      channel: activeChannel,
-                      body: e.target.value.trim(),
-                    });
-                    e.target.value = '';
+                  if (e.key === 'Enter') {
+                    handleSend(e.target.value);
                   }
                 }}
               />
-              <button className="thread-send-btn">Send</button>
+              <button
+                type="button"
+                className="thread-send-btn"
+                onClick={() => handleSend(inputRef.current?.value ?? inputText)}
+              >
+                Send
+              </button>
             </div>
           </div>
         </div>

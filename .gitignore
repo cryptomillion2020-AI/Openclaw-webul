@@ -1,2 +1,10 @@
 node_modules/
 dist/
+
+# OPEN-WEBUI-COMMS-AUTH Stage 2 (Architect 2026-06-02 11:14 PDT):
+# Vite local-overlay env files MUST stay out of the repo — operators put
+# VITE_WS_TOKEN into .env.production.local so the secret value never lands in
+# a tracked file. The committed .env.production carries the variable wiring
+# only, never the value.
+.env.local
+.env.*.local

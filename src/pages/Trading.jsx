@@ -13,8 +13,15 @@ const TABS = [
   { id: 'strategy',   label: 'Strategy Lab' },
 ];
 
-export function Trading({ killActive, mode3Conditions, mode3Enabled, onSend }) {
+export function Trading({ killActive, mode3Conditions, mode3Enabled, onSend, busActivity, connected }) {
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Filter QUANT-related events from bus activity (display-only)
+  const quantEvents = (busActivity || []).filter(e =>
+    e.dir === 'quant-to-overseer' || e.dir?.startsWith('webui-to-quant') ||
+    e.from === 'QUANT' || e.from === 'STAN'
+  );
+  const quantProposals = quantEvents.filter(e => e.file?.includes('PROPOSAL') || e.file?.includes('proposal'));
 
   return (
     <div className="trading-page">
@@ -57,7 +64,7 @@ export function Trading({ killActive, mode3Conditions, mode3Enabled, onSend }) {
       <div className="stat-cards-row">
         <div className="stat-card"><div className="stat-card-value">0</div><div className="stat-card-label">Open Positions</div></div>
         <div className="stat-card"><div className="stat-card-value">0.00</div><div className="stat-card-label">P&amp;L (USDT)</div></div>
-        <div className="stat-card"><div className="stat-card-value">0</div><div className="stat-card-label">Proposals</div></div>
+        <div className="stat-card"><div className="stat-card-value">{quantProposals.length || 0}</div><div className="stat-card-label">Proposals</div></div>
         <div className="stat-card"><div className="stat-card-value">0%</div><div className="stat-card-label">Win Rate</div></div>
       </div>
 
@@ -66,6 +73,16 @@ export function Trading({ killActive, mode3Conditions, mode3Enabled, onSend }) {
         <div className="chart-card">
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Overview</h3>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Portfolio overview and performance metrics. Data loads when QUANT is active.</p>
+          {quantEvents.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>Recent Activity</p>
+              {quantEvents.slice(-5).reverse().map((e, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', padding: '2px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>{e.from}</span>: {e.preview?.slice(0, 80) || e.file}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="top-performers-card">
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Top Performers</h3>
