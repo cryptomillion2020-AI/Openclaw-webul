@@ -118,6 +118,32 @@ export default function App() {
       setTasks(msg.tasks || []);
       setActiveProjects(msg.active_projects || []);
       setActiveTasks(msg.active_tasks || []);
+      // Wave 4c: seed per-channel Comms scrollback so the AgentComms page
+      // renders historical messages immediately on connect.
+      if (msg.comms_history && typeof msg.comms_history === 'object') {
+        const seeded = {};
+        Object.entries(msg.comms_history).forEach(([channel, events]) => {
+          if (!Array.isArray(events)) return;
+          seeded[channel] = events
+            .map(e => normalizeCommsDelta({ ...e, channel }))
+            .sort((a, b) => a.mtime - b.mtime)
+            .slice(-COMMS_RING_LIMIT);
+        });
+        setCommsByChannel(prev => {
+          // Merge: seeded values prefill empty channels; live deltas
+          // already accumulated stay (dedup by file+dir against incoming).
+          const merged = { ...seeded };
+          Object.entries(prev).forEach(([ch, existing]) => {
+            const incoming = merged[ch] || [];
+            const seenKeys = new Set(incoming.map(e => `${e.dir}::${e.file}`));
+            const carry = existing.filter(e => !seenKeys.has(`${e.dir}::${e.file}`));
+            merged[ch] = [...incoming, ...carry]
+              .sort((a, b) => a.mtime - b.mtime)
+              .slice(-COMMS_RING_LIMIT);
+          });
+          return merged;
+        });
+      }
     } else if (msg.type === 'active_projects_delta') {
       setActiveProjects(msg.active_projects || []);
       setActiveTasks(msg.active_tasks || []);
