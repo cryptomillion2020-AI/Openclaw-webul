@@ -91,6 +91,10 @@ export default function App() {
   const [busActivity,     setBusActivity]     = useState([]);
   const [commsByChannel,  setCommsByChannel]  = useState({});
   const [tasks,           setTasks]           = useState([]);
+  // Wave 4c: Dashboard Active Projects + Active Tasks panels, fed by the
+  // active-projects registry (shared/state/active-projects.json) via WS deltas.
+  const [activeProjects, setActiveProjects]   = useState([]);
+  const [activeTasks,    setActiveTasks]      = useState([]);
   const [lastUpdate,      setLastUpdate]      = useState(null);
 
   // ---------------------------------------------------------------------------
@@ -112,6 +116,11 @@ export default function App() {
       setOauthStatus(msg.oauth_status || {});
       setBusActivity(msg.bus_activity || []);
       setTasks(msg.tasks || []);
+      setActiveProjects(msg.active_projects || []);
+      setActiveTasks(msg.active_tasks || []);
+    } else if (msg.type === 'active_projects_delta') {
+      setActiveProjects(msg.active_projects || []);
+      setActiveTasks(msg.active_tasks || []);
     } else if (msg.type === 'task_update') {
       // Merge changed tasks into existing tasks array
       setTasks(prev => {
@@ -257,6 +266,8 @@ export default function App() {
     connected,
     oauthStatus,
     tasks,
+    activeProjects,
+    activeTasks,
   };
 
   const renderPage = () => {
