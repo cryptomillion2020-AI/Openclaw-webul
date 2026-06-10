@@ -92,39 +92,6 @@ export function Dashboard({
         </div>
       </div>
 
-      {/* Active Tasks — task being worked + associated project name */}
-      <div className="bottom-card" style={{ marginBottom: 16 }}>
-        <div className="section-header">
-          <span className="section-title">📌 Active Tasks</span>
-          <span className="section-count">{openTasks.length}</span>
-        </div>
-        {openTasks.length === 0 ? (
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '8px 0' }}>No active tasks</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
-            {openTasks.map(t => (
-              <div key={t.id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 10px',
-                borderRadius: 6,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-                    project: {projectTitleById[t.project_id] || '<unknown>'} · assignee: {t.assignee || '—'}
-                  </span>
-                </div>
-                <span style={{ fontSize: 11, color: statusColor(t.status), whiteSpace: 'nowrap' }}>{STATUS_LABEL[t.status] || t.status}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Bottom grid */}
       <div className="dashboard-bottom-grid">
         <div className="bottom-card">
@@ -185,6 +152,42 @@ export function Dashboard({
           </div>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '8px 0' }}>No unread priority messages</p>
         </div>
+      </div>
+
+      {/* Active Tasks — all in-progress tasks (project-attached + standalone) */}
+      <div className="bottom-card" style={{ marginTop: 16 }}>
+        <div className="section-header">
+          <span className="section-title">📌 Active Tasks</span>
+          <span className="section-count">{openTasks.length}</span>
+        </div>
+        {openTasks.length === 0 ? (
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '8px 0' }}>No active tasks</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+            {openTasks.map(t => {
+              const projTitle = t.project_id ? (projectTitleById[t.project_id] || '<unknown project>') : null;
+              return (
+                <div key={t.id} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px 10px',
+                  borderRadius: 6,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                      {projTitle ? `project: ${projTitle} · ` : 'standalone · '}assignee: {t.assignee || '—'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: statusColor(t.status), whiteSpace: 'nowrap' }}>{STATUS_LABEL[t.status] || t.status}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
