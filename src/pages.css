@@ -85,18 +85,15 @@
 .stat-card-value {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(310deg, #17c1e8, #0075FF);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #17c1e8;
   line-height: 1;
   margin-bottom: 6px;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-.stat-card:nth-child(2) .stat-card-value { background: linear-gradient(310deg, #7928CA, #FF0080); -webkit-background-clip: text; background-clip: text; }
-.stat-card:nth-child(3) .stat-card-value { background: linear-gradient(310deg, #01B574, #00d09c); -webkit-background-clip: text; background-clip: text; }
-.stat-card:nth-child(4) .stat-card-value { background: linear-gradient(310deg, #f53939, #fbcf33); -webkit-background-clip: text; background-clip: text; }
+.stat-card:nth-child(2) .stat-card-value { color: #ff0080; }
+.stat-card:nth-child(3) .stat-card-value { color: #01b574; }
+.stat-card:nth-child(4) .stat-card-value { color: #f53939; }
 
 .stat-card-label {
   font-size: 11px;
