@@ -20,6 +20,9 @@ import { Trading }         from './pages/Trading';
 import AiCityPage          from './pages/AiCityPage';
 import { PrivateVault }    from './pages/PrivateVault';
 import { TeamResearch }    from './pages/TeamResearch';
+import { StaleBanner }    from './components/StaleBanner';
+import { ArchitectMenu }  from './components/ArchitectMenu';
+import { PageTransition } from './components/PageTransition';
 import './App.css';
 
 // Channels the dashboard subscribes to on connect
@@ -320,8 +323,22 @@ export default function App() {
         connected={connected}
       />
 
+      <StaleBanner
+        connected={connected}
+        lastUpdate={lastUpdate}
+        onReconnect={() => window.location.reload()}
+      />
+
       <div className="main-content">
-        {renderPage()}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px 0' }}>
+          <ArchitectMenu
+            onSettings={() => setCurrentPage('settings')}
+            onLogout={() => window.location.href = '/cdn-cgi/access/logout'}
+          />
+        </div>
+        <PageTransition pageKey={currentPage}>
+          {renderPage()}
+        </PageTransition>
 
         <footer style={{
           marginTop: 'auto',

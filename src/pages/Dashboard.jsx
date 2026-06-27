@@ -1,11 +1,13 @@
 /**
  * Dashboard.jsx — Page 1: Main Dashboard
  * Uses pages.css class names
+ * Pass 2 P1 (2026-06-27): 4-card hero + helpers + "Currently Active Tasks" rename
  */
 
 import { ControlsCluster } from '../components/ControlsCluster';
 import { AgentStatus } from '../components/AgentStatus';
 import { OAuthStatus } from '../components/OAuthStatus';
+import { isOpenTask, isCurrentlyActiveTask, isCompleteTask } from '../lib/task-helpers';
 
 // Wave 4c: status → display class + label for project/phase/task chips.
 const STATUS_LABEL = {
@@ -36,7 +38,7 @@ export function Dashboard({
   // Active Tasks rendered: only in-progress + blocked; map project_id → title.
   const projectTitleById = Object.fromEntries((activeProjects || []).map(p => [p.id, p.title]));
   const openProjects = (activeProjects || []).filter(p => p.status === 'in_progress' || p.status === 'blocked');
-  const openTasks    = (activeTasks    || []).filter(t => t.status === 'in_progress' || t.status === 'blocked');
+  const openTasks    = (activeTasks    || []).filter(t => isCurrentlyActiveTask(t.status));
   return (
     <div className="dashboard-page">
       {/* Top bar */}
@@ -52,23 +54,27 @@ export function Dashboard({
         </div>
       </div>
 
-      {/* Stat cards row */}
+      {/* Stat cards row — Pass 2 P1 (4 hero cards) */}
       <div className="stat-cards-row">
         <div className="stat-card">
-          <div className="stat-card-value">13</div>
-          <div className="stat-card-label">Agents</div>
+          <div className="stat-card-value">{(activeTasks || []).filter(t => isOpenTask(t.status)).length}</div>
+          <div className="stat-card-label">Active</div>
+          <div className="stat-card-sub">in execution</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{tasks ? tasks.filter(t => t.status === 'active' || t.status === 'pending').length : 0}</div>
-          <div className="stat-card-label">Active Tasks</div>
+          <div className="stat-card-value">{(activeTasks || []).filter(t => t.status === 'pending').length}</div>
+          <div className="stat-card-label">Queued</div>
+          <div className="stat-card-sub">pending</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{tasks ? tasks.filter(t => t.status === 'complete').length : 0}</div>
-          <div className="stat-card-label">Complete</div>
+          <div className="stat-card-value">3</div>
+          <div className="stat-card-label">Decisions</div>
+          <div className="stat-card-sub">awaiting</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{busActivity?.length || 0}</div>
-          <div className="stat-card-label">Bus Events</div>
+          <div className="stat-card-value">OFF</div>
+          <div className="stat-card-label">Trading</div>
+          <div className="stat-card-sub">paper hold</div>
         </div>
       </div>
 
@@ -157,7 +163,7 @@ export function Dashboard({
       {/* Active Tasks — all in-progress tasks (project-attached + standalone) */}
       <div className="bottom-card" style={{ marginTop: 16 }}>
         <div className="section-header">
-          <span className="section-title">📌 Active Tasks</span>
+          <span className="section-title">📌 Currently Active Tasks</span>
           <span className="section-count">{openTasks.length}</span>
         </div>
         {openTasks.length === 0 ? (

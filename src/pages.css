@@ -104,6 +104,13 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+.stat-card-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 4px;
+}
+
 .stat-card-change {
   font-size: 11px;
   font-weight: 600;
@@ -1795,11 +1802,15 @@
 .glow-green { box-shadow: 0 0 20px rgba(1,181,116,0.3); }
 
 /* Responsive */
-@media (max-width: 1200px) {
-  .stat-cards-row { grid-template-columns: repeat(2,1fr); }
+@media (max-width: 1100px) {
+  .stat-cards-row { grid-template-columns: repeat(2, 1fr); }
   .dashboard-main-grid { grid-template-columns: 1fr; }
   .dashboard-bottom-grid { grid-template-columns: 1fr 1fr; }
   .trading-overview-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .stat-cards-row { grid-template-columns: 1fr; }
+  .dashboard-bottom-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 900px) {
@@ -1808,3 +1819,120 @@
   .sessions-panel { width: 100%; height: 120px; border-radius: 16px 16px 0 0; }
   .report-card-panel { width: 100%; height: 200px; border-radius: 0 0 16px 16px; }
 }
+
+/* ───── StaleBanner ───── */
+.stale-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbcf33;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.stale-banner-reconnect {
+  background: transparent;
+  color: #fbcf33;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.stale-banner-reconnect:hover { background: rgba(245, 158, 11, 0.1); }
+
+/* ───── PageTransition ───── */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+.page-transition-exit {
+  opacity: 1;
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 150ms ease-in;
+}
+
+/* ───── ArchitectMenu ───── */
+.architect-menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+.architect-menu-trigger {
+  background: transparent;
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.architect-menu-trigger:hover { background: rgba(255, 255, 255, 0.06); }
+.architect-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 160px;
+  background: #131826;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  padding: 4px 0;
+}
+.architect-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.architect-menu-item:hover { background: rgba(255, 255, 255, 0.05); }
+.architect-menu-item-danger { color: #f87171; }
+
+/* ───── Sidebar collapse ───── */
+.sidebar.collapsed {
+  width: 64px;
+}
+.sidebar.collapsed .sidebar-logo-text,
+.sidebar.collapsed .nav-item span:not(.nav-item-icon),
+.sidebar.collapsed .sidebar-status > div > span:not(.status-dot) {
+  display: none;
+}
+.sidebar.collapsed .nav-item { padding: 12px; justify-content: center; }
+.sidebar-collapse-toggle {
+  position: absolute;
+  top: 12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #131826;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+.sidebar { position: relative; transition: width 200ms ease-out; }

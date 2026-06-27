@@ -36,10 +36,17 @@ const formatAuthStatus = (status) => {
 };
 
 export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
-  const [expanded, setExpanded] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+      <button
+        className="sidebar-collapse-toggle"
+        onClick={() => setCollapsed(v => !v)}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? '›' : '‹'}
+      </button>
       {/* Logo */}
       <div className="sidebar-logo">
         <span className="sidebar-logo-icon">⚡</span>
