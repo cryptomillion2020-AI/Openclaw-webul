@@ -1,0 +1,87 @@
+/**
+ * pass3-tokens.css — WebUI Pass 3 theme tokens
+ * Filed: 2026-06-27 by Commander SEVIN
+ * Authority: Architect 2026-06-27 14:38 PDT (Pass 3 SPEC §1) + 16:12 PDT (rank hierarchy reaffirm)
+ */
+
+/* Fonts — P3.0 uses Google Fonts CDN; P3.1+ will self-host in public/fonts/ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Surface */
+  --bg-deep:        #0d0f1b;
+  --bg-card:        #161a2b;
+  --bg-card-2:      #1a1f2e;
+  --bg-card-elev:   #1f2438;
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-strong:  rgba(255, 255, 255, 0.12);
+
+  /* Text */
+  --text-primary:   #f1f5f9;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-muted:     rgba(255, 255, 255, 0.42);
+
+  /* Categorical accents — 13 agents per Pass 3 SPEC §1 */
+  --cat-orange:     #ff6b35;   /* Commander SEVIN */
+  --cat-blue:       #3b82f6;   /* Captain OVERSEER */
+  --cat-lime:       #84cc16;   /* Engineer ELEVIN */
+  --cat-purple:     #a855f7;   /* Scholar TIKA */
+  --cat-pink:       #f43f5e;   /* Trader QUANT */
+  --cat-yellow:     #fbbf24;   /* Synthesizer NEXUS */
+  --cat-cyan:       #22d3ee;   /* Operator COMMS */
+  --cat-amber:      #fb923c;   /* Aide AXIS */
+  --cat-magenta:    #ec4899;   /* Artist COSMOS */
+  --cat-teal:       #14b8a6;   /* Pathfinder NAVIGATOR */
+  --cat-slate:      #94a3b8;   /* Auditor STAN-LOCAL */
+  --cat-slate-dark: #475569;   /* Inspector STAN-HL */
+  --cat-violet:     #7c3aed;   /* Keeper VAULT */
+
+  /* Status (universal) */
+  --status-active:  #22c55e;
+  --status-pending: #eab308;
+  --status-blocked: #ef4444;
+  --status-done:    #94a3b8;
+  --status-hold:    #64748b;
+  --status-airgap:  #a78bfa;
+  --status-dead:    #475569;
+
+  /* Gamification */
+  --xp-glow:        #fbbf24;
+  --level-up:       #84cc16;
+  --achievement:    #f59e0b;
+  --mission-active: #22d3ee;
+  --mission-done:   #22c55e;
+  --streak-flame:   #ff6b35;
+  --kill-armed:     #dc2626;
+  --kill-confirm:   #b91c1c;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+  --font-game:    'Orbitron', 'Space Grotesk', sans-serif;
+
+  --size-display:  48px;
+  --size-h1:       28px;
+  --size-h2:       18px;
+  --size-body:     14px;
+  --size-small:    12px;
+  --size-tiny:     11px;
+  --size-mono:     13px;
+  --size-stat-lg:  40px;
+  --size-stat-md:  24px;
+
+  /* Motion */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:      120ms;
+  --dur-base:      200ms;
+  --dur-slow:      400ms;
+  --dur-ambient:   3000ms;
+
+  /* Radii + shadows */
+  --radius-card:    14px;
+  --radius-pill:    999px;
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.02);
+  --shadow-card-elev: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px var(--border-strong);
+}

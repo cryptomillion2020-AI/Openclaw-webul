@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-06-27T23:30:00Z",
+  "agents": {
+    "sevin":      { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "overseer":   { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "elevin":     { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "tika":       { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "quant":      { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "nexus":      { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "comms":      { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "axis":       { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "cosmos":     { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "navigator":  { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "stan-local": { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "stan-hl":    { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] },
+    "vault":      { "xp_total": 0, "level": 1, "streak_days": 0, "last_active_utc": "2026-06-27T23:30:00Z", "achievements": [], "current_missions": [] }
+  },
+  "global_leaderboard": ["sevin", "overseer", "elevin", "tika", "nexus", "navigator", "cosmos", "comms", "axis", "stan-local", "quant", "vault", "stan-hl"]
+}

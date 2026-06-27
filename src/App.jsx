@@ -69,11 +69,22 @@ function normalizeCommsDelta(msg) {
 }
 
 export default function App() {
-  // Initialize page from URL query param (e.g., ?page=ai-city)
+  // Pass 3 rebrand: URL aliases for page renames (Architect 2026-06-27)
+  // /bridge → dashboard, /markets → trading, /lab → research, /network → comms
+  // UI labels stay original in P3.0; rebrand UI in P3.1+
+  const ROUTE_ALIASES = {
+    'bridge':  'dashboard',
+    'markets': 'trading',
+    'lab':     'research',
+    'network': 'comms',
+  };
+  // Initialize page from URL query param (e.g., ?page=ai-city or ?page=bridge)
   const [currentPage, setCurrentPage] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const page = params.get('page');
+      let page = params.get('page');
+      // Apply Pass 3 alias mapping
+      if (page && ROUTE_ALIASES[page]) page = ROUTE_ALIASES[page];
       const validPages = ['dashboard', 'comms', 'trading', 'ai-city', 'vault', 'research'];
       if (page && validPages.includes(page)) {
         return page;
