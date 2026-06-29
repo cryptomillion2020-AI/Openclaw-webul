@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket }   from './hooks/useWebSocket';
 import { Sidebar }         from './components/Sidebar';
 import { Dashboard }       from './pages/Dashboard';
+import { Bridge }          from './pages/Bridge';
 import { AgentComms }      from './pages/AgentComms';
 import { Trading }         from './pages/Trading';
 import AiCityPage          from './pages/AiCityPage';
@@ -85,7 +86,7 @@ export default function App() {
       let page = params.get('page');
       // Apply Pass 3 alias mapping
       if (page && ROUTE_ALIASES[page]) page = ROUTE_ALIASES[page];
-      const validPages = ['dashboard', 'comms', 'trading', 'ai-city', 'vault', 'research'];
+      const validPages = ['dashboard', 'bridge', 'comms', 'trading', 'ai-city', 'vault', 'research'];
       if (page && validPages.includes(page)) {
         return page;
       }
@@ -312,7 +313,8 @@ export default function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard': return <Dashboard {...pageProps} />;
+      case 'dashboard': return <Bridge {...pageProps} />;
+      case 'bridge':    return <Bridge {...pageProps} />;
       case 'comms':     return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
       case 'trading':   return <Trading {...pageProps} />;
       case 'ai-city':   return <AiCityPage />;

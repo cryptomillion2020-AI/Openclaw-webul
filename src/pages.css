@@ -1994,3 +1994,172 @@
   font-size: 11px;
 }
 .sidebar { position: relative; transition: width 200ms ease-out; }
+
+/* ───── PASS 3.1 — BRIDGE BENTO LAYOUT ───── */
+.bridge-page {
+  position: relative;
+  min-height: 100vh;
+  padding: 16px;
+  z-index: 1;
+}
+
+.bridge-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1.5fr 2fr 1fr;
+  grid-template-areas:
+    "decisions  missions    leaderboard"
+    "trading    activity    leaderboard"
+    "bus        activity    comms"
+    "workload   health      comms"
+    "quests     quests      cta";
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.bento-card {
+  background: rgba(22, 26, 43, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+.bento-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.bento-card-label {
+  font-family: var(--font-game);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.bento-card-hero {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.bento-card-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.bento-decisions    { grid-area: decisions; }
+.bento-decisions .bento-card-hero { color: var(--xp-glow); }
+.bento-missions     { grid-area: missions; }
+.bento-leaderboard  { grid-area: leaderboard; }
+.bento-trading      { grid-area: trading; }
+.bento-bus          { grid-area: bus; }
+.bento-comms        { grid-area: comms; }
+.bento-workload     { grid-area: workload; }
+.bento-activity     { grid-area: activity; }
+.bento-health       { grid-area: health; }
+.bento-quests       { grid-area: quests; }
+.bento-cta          { grid-area: cta; }
+
+.bento-missions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.bento-leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.bento-comms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bento-comms-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--bg-card-2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.bento-comms-badge {
+  background: var(--cat-cyan);
+  color: var(--bg-deep);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.bento-health-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.bento-health-tile {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--status-active);
+  opacity: 0.85;
+}
+.bento-health-tile[data-agent="stan-hl"] { background: var(--status-dead); }
+.bento-health-tile[data-agent="quant"], .bento-health-tile[data-agent="vault"] { background: var(--status-hold); }
+.bento-health-tile[data-agent="tika"], .bento-health-tile[data-agent="nexus"],
+.bento-health-tile[data-agent="comms"], .bento-health-tile[data-agent="axis"],
+.bento-health-tile[data-agent="cosmos"], .bento-health-tile[data-agent="navigator"],
+.bento-health-tile[data-agent="stan-local"] { background: var(--status-pending); }
+
+.bento-quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 1100px) {
+  .bridge-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "decisions  decisions"
+      "missions   missions"
+      "trading    bus"
+      "leaderboard leaderboard"
+      "activity   activity"
+      "workload   comms"
+      "health     health"
+      "quests     quests"
+      "cta        cta";
+  }
+}
+@media (max-width: 700px) {
+  .bridge-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "decisions"
+      "missions"
+      "leaderboard"
+      "trading"
+      "bus"
+      "comms"
+      "activity"
+      "workload"
+      "health"
+      "quests"
+      "cta";
+  }
+  .bento-missions-grid {
+    grid-template-columns: 1fr;
+  }
+}

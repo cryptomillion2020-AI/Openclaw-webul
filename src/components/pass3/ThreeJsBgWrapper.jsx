@@ -1,26 +1,20 @@
 /**
- * ThreeJsBgWrapper.jsx — Pass 3 Three.js background mount wrapper (skeleton)
- *
- * In P3.1+ this becomes:
- *   - R3F Canvas mount with sceneComponent
- *   - Visibility-detection pause loop (per SPEC §2.4)
- *   - Dynamic LOD downgrade
- *   - ?no-3d=1 query param fallback
- *
- * For P3.0 foundation: renders a static gradient placeholder + the overlay children.
+ * ThreeJsBgWrapper.jsx — Pass 3 Three.js background mount wrapper
+ * P3.1 populates this to support arbitrary scene component + visibility pause
  */
-export function ThreeJsBgWrapper({ sceneComponent, children, fallback2D = false }) {
+import { useEffect } from 'react';
+
+export function ThreeJsBgWrapper({ children, sceneComponent }) {
+  // Visibility pause stub — actual frameloop suspension via R3F invalidate hook in P3.1.x
+  useEffect(() => {
+    const onVis = () => { /* placeholder for frameloop pause logic */ };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        background: 'radial-gradient(ellipse at center, rgba(168, 85, 247, 0.06) 0%, var(--bg-deep) 60%)',
-        pointerEvents: 'none',
-      }}>
-        {/* P3.1+ mounts <Canvas>{sceneComponent}</Canvas> here */}
-      </div>
+      {sceneComponent}
       <div style={{ position: 'relative', zIndex: 10 }}>
         {children}
       </div>
