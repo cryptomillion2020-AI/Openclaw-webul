@@ -1999,8 +1999,19 @@
 .bridge-page {
   position: relative;
   min-height: 100vh;
-  padding: 16px;
+  padding: 16px 24px;
   z-index: 1;
+}
+/* Three.js canvas goes EDGE-TO-EDGE (full-bleed); not constrained by grid */
+.bridge-page canvas {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 0 !important;
 }
 
 .bridge-grid {
@@ -2015,8 +2026,36 @@
     "bus        activity    comms"
     "workload   health      comms"
     "quests     quests      cta";
-  max-width: 1600px;
-  margin: 0 auto;
+  /* No max-width — Bento spans full content area, background shows through gutters between cards */
+  width: 100%;
+}
+
+/* Sidebar fully hidden when collapsed: floating show-toggle in top-left */
+.sidebar-show-toggle {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(22, 26, 43, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-card-elev);
+  transition: all var(--dur-base) var(--ease-out);
+}
+.sidebar-show-toggle:hover {
+  border-color: var(--cat-cyan);
+  color: var(--cat-cyan);
+  transform: scale(1.05);
 }
 
 .bento-card {

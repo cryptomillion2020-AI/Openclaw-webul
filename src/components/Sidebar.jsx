@@ -38,14 +38,29 @@ const formatAuthStatus = (status) => {
 export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
   const [collapsed, setCollapsed] = useState(false);
 
+  // When collapsed: render only the toggle button (sidebar fully hidden)
+  if (collapsed) {
+    return (
+      <button
+        className="sidebar-show-toggle"
+        onClick={() => setCollapsed(false)}
+        title="Show sidebar"
+        aria-label="Show sidebar"
+      >
+        ›
+      </button>
+    );
+  }
+
   return (
-    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+    <aside className="sidebar">
       <button
         className="sidebar-collapse-toggle"
-        onClick={() => setCollapsed(v => !v)}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        onClick={() => setCollapsed(true)}
+        title="Hide sidebar"
+        aria-label="Hide sidebar"
       >
-        {collapsed ? '›' : '‹'}
+        ‹
       </button>
       {/* Logo */}
       <div className="sidebar-logo">
