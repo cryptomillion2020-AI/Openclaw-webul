@@ -48,7 +48,7 @@ const MOCK_COMMS = [
 export function Bridge({ killActive, busActivity, connected }) {
   return (
     <div className="bridge-page">
-      <ConstellationScene />
+      <ConstellationScene busActivity={busActivity} />
 
       <div className="bridge-grid">
         {/* Hero: Awaiting Architect (Decisions queued) */}

@@ -2026,8 +2026,13 @@
     "bus        activity    comms"
     "workload   health      comms"
     "quests     quests      cta";
-  /* No max-width — Bento spans full content area, background shows through gutters between cards */
+  /* Centering: max-width caps total Bento width; margin auto centers it within
+     the area between the sidebar (left) and the screen-right.
+     When sidebar is hidden, the parent layout naturally shifts left and the
+     Bento re-centers in the full viewport. */
   width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
 }
 
 /* Sidebar fully hidden when collapsed: floating show-toggle in top-left */
