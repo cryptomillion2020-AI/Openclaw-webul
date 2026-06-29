@@ -8,6 +8,8 @@ import { MissionCard } from '../components/pass3/MissionCard';
 import { LeaderboardRow } from '../components/pass3/LeaderboardRow';
 import { SideQuestPill } from '../components/pass3/SideQuestPill';
 import { NewDirectiveCTA } from '../components/pass3/NewDirectiveCTA';
+import { FleetActivityChart } from '../charts/FleetActivityChart';
+import { WorkloadTreemap } from '../charts/WorkloadTreemap';
 
 const MOCK_LEADERBOARD = [
   { agentId: 'sevin',      level: 4, xp: 1240, trend: 'up' },
@@ -101,16 +103,20 @@ export function Bridge({ killActive, busActivity, connected }) {
           </div>
         </div>
 
-        {/* Workload placeholder */}
+        {/* Workload Treemap (d3-hierarchy) */}
         <div className="bento-card bento-workload">
           <div className="bento-card-label">Workload Treemap</div>
-          <div className="bento-card-sub" style={{ padding: '24px 0', textAlign: 'center' }}>d3-hierarchy treemap renders here</div>
+          <div style={{ flex: 1, minHeight: 220 }}>
+            <WorkloadTreemap width={300} height={220} />
+          </div>
         </div>
 
-        {/* Fleet activity placeholder */}
+        {/* Fleet Activity Chart (visx stacked bar) */}
         <div className="bento-card bento-activity">
           <div className="bento-card-label">Fleet Activity 24h</div>
-          <div className="bento-card-sub" style={{ padding: '24px 0', textAlign: 'center' }}>visx stacked bar 13 lanes renders here</div>
+          <div style={{ flex: 1, minHeight: 180 }}>
+            <FleetActivityChart width={560} height={180} />
+          </div>
         </div>
 
         {/* Agent health placeholder */}
