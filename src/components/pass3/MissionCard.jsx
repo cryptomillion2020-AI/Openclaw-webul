@@ -11,9 +11,24 @@ const STATUS_COLOR = {
   done: 'var(--mission-done)',
 };
 
+function formatEta(deadlineIso) {
+  if (!deadlineIso) return null;
+  const ms = new Date(deadlineIso).getTime() - Date.now();
+  if (ms <= 0) return 'OVERDUE';
+  const hrs = ms / 3600000;
+  if (hrs < 1) return `${Math.round(ms / 60000)}m`;
+  if (hrs < 24) return `${hrs.toFixed(1)}h`;
+  return `${(hrs / 24).toFixed(1)}d`;
+}
+
 export function MissionCard({ mission }) {
   if (!mission) return null;
-  const { title, assignee, status = 'pending', progress_pct = 0, xp_reward = 0, deadline_iso } = mission;
+  const {
+    title, assignee, status = 'pending', progress_pct = 0,
+    progress_delta_24h = 0, xp_reward = 0, deadline_iso,
+  } = mission;
+  const deltaDirection = progress_delta_24h > 0 ? 'up' : progress_delta_24h < 0 ? 'down' : null;
+  const eta = formatEta(deadline_iso);
   return (
     <div style={{
       background: 'var(--bg-card)',
@@ -43,6 +58,12 @@ export function MissionCard({ mission }) {
           transition: 'width var(--dur-base) var(--ease-out)',
         }} />
       </div>
+      {deltaDirection && (
+        <div className={`bento-card-delta ${deltaDirection}`}>
+          <span>{deltaDirection === 'up' ? '▲' : '▼'} {Math.abs(progress_delta_24h)}%</span>
+          <span className="bento-card-timeframe">24h</span>
+        </div>
+      )}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -50,7 +71,7 @@ export function MissionCard({ mission }) {
         color: 'var(--text-secondary)',
       }}>
         <span style={{ color: 'var(--xp-glow)' }}>+{xp_reward} XP</span>
-        {deadline_iso && <span>by {new Date(deadline_iso).toLocaleTimeString()}</span>}
+        {eta && <span className="bento-card-timeframe">ETA {eta}</span>}
       </div>
     </div>
   );

@@ -12,26 +12,28 @@ import { FleetActivityChart } from '../charts/FleetActivityChart';
 import { WorkloadTreemap } from '../charts/WorkloadTreemap';
 
 const MOCK_LEADERBOARD = [
-  { agentId: 'sevin',      level: 4, xp: 1240, trend: 'up' },
-  { agentId: 'overseer',   level: 3, xp: 890,  trend: 'up' },
-  { agentId: 'elevin',     level: 3, xp: 720,  trend: 'up' },
-  { agentId: 'tika',       level: 2, xp: 340,  trend: 'flat' },
-  { agentId: 'nexus',      level: 2, xp: 280,  trend: 'flat' },
-  { agentId: 'navigator',  level: 2, xp: 220,  trend: 'flat' },
-  { agentId: 'cosmos',     level: 2, xp: 200,  trend: 'flat' },
-  { agentId: 'comms',      level: 1, xp: 90,   trend: 'flat' },
-  { agentId: 'axis',       level: 1, xp: 70,   trend: 'flat' },
-  { agentId: 'stan-local', level: 1, xp: 60,   trend: 'flat' },
-  { agentId: 'quant',      level: 1, xp: 50,   trend: 'flat' },
-  { agentId: 'vault',      level: 1, xp: 30,   trend: 'flat' },
-  { agentId: 'stan-hl',    level: 1, xp: 0,    trend: 'down' },
+  { agentId: 'sevin',      level: 4, xp: 1240, trend: 'up',   xpDelta7d: 320 },
+  { agentId: 'overseer',   level: 3, xp: 890,  trend: 'up',   xpDelta7d: 180 },
+  { agentId: 'elevin',     level: 3, xp: 720,  trend: 'up',   xpDelta7d: 140 },
+  { agentId: 'tika',       level: 2, xp: 340,  trend: 'flat', xpDelta7d: 40 },
+  { agentId: 'nexus',      level: 2, xp: 280,  trend: 'flat', xpDelta7d: 30 },
+  { agentId: 'navigator',  level: 2, xp: 220,  trend: 'flat', xpDelta7d: 20 },
+  { agentId: 'cosmos',     level: 2, xp: 200,  trend: 'flat', xpDelta7d: 25 },
+  { agentId: 'comms',      level: 1, xp: 90,   trend: 'flat', xpDelta7d: 10 },
+  { agentId: 'axis',       level: 1, xp: 70,   trend: 'flat', xpDelta7d: 5 },
+  { agentId: 'stan-local', level: 1, xp: 60,   trend: 'flat', xpDelta7d: 5 },
+  { agentId: 'quant',      level: 1, xp: 50,   trend: 'flat', xpDelta7d: 0 },
+  { agentId: 'vault',      level: 1, xp: 30,   trend: 'flat', xpDelta7d: 5 },
+  { agentId: 'stan-hl',    level: 1, xp: 0,    trend: 'down', xpDelta7d: -10 },
 ];
 
 const MOCK_MISSIONS = [
-  { mission_id: 'p31', title: 'Pass 3.1 Bridge Implementation', assignee: 'sevin', status: 'in_progress', progress_pct: 30, xp_reward: 500, deadline_iso: '2026-06-30T23:51:00Z' },
-  { mission_id: 'sit024', title: 'SIT-024 Triple-Misfire Investigation', assignee: 'sevin', status: 'in_progress', progress_pct: 35, xp_reward: 150, deadline_iso: '2026-06-30T00:00:00Z' },
-  { mission_id: 'oversight', title: 'PM/SM Cadence Operations', assignee: 'overseer', status: 'in_progress', progress_pct: 85, xp_reward: 50, deadline_iso: '2026-06-30T00:00:00Z' },
+  { mission_id: 'p31', title: 'Pass 3.1 Bridge Implementation', assignee: 'sevin', status: 'in_progress', progress_pct: 55, progress_delta_24h: 25, xp_reward: 500, deadline_iso: '2026-06-30T23:51:00Z' },
+  { mission_id: 'sit024', title: 'SIT-024 Triple-Misfire Investigation', assignee: 'sevin', status: 'in_progress', progress_pct: 35, progress_delta_24h: 0, xp_reward: 150, deadline_iso: '2026-07-05T00:00:00Z' },
+  { mission_id: 'oversight', title: 'PM/SM Cadence Operations', assignee: 'overseer', status: 'in_progress', progress_pct: 90, progress_delta_24h: 5, xp_reward: 50, deadline_iso: '2026-06-30T12:00:00Z' },
 ];
+
+const MOCK_DECISIONS_DELTA = -2;
 
 const MOCK_QUESTS = [
   { id: 'q1', title: 'Reply to all P0 within 5 min', cadence: 'DAILY', xp_reward: 20, progress: 80 },
@@ -56,6 +58,12 @@ export function Bridge({ killActive, busActivity, connected }) {
           <div className="bento-card-label">Awaiting You</div>
           <div className="bento-card-hero">0</div>
           <div className="bento-card-sub">Architect decisions queued</div>
+          {MOCK_DECISIONS_DELTA !== 0 && (
+            <div className={`bento-card-delta ${MOCK_DECISIONS_DELTA < 0 ? 'down' : 'up'}`}>
+              <span>{MOCK_DECISIONS_DELTA < 0 ? '▼' : '▲'} {Math.abs(MOCK_DECISIONS_DELTA)} vs yesterday</span>
+              <span className="bento-card-timeframe">24h</span>
+            </div>
+          )}
         </div>
 
         {/* Active Missions */}
@@ -71,7 +79,7 @@ export function Bridge({ killActive, busActivity, connected }) {
           <div className="bento-card-label">Leaderboard</div>
           <div className="bento-leaderboard-list">
             {MOCK_LEADERBOARD.map((r, i) => (
-              <LeaderboardRow key={r.agentId} rank={i + 1} agentId={r.agentId} level={r.level} xp={r.xp} trend={r.trend} />
+              <LeaderboardRow key={r.agentId} rank={i + 1} agentId={r.agentId} level={r.level} xp={r.xp} trend={r.trend} xpDelta7d={r.xpDelta7d} />
             ))}
           </div>
         </div>

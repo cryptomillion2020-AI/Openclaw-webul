@@ -10,11 +10,10 @@ const RIM_GLOW = {
   3: '0 0 8px rgba(205, 127, 50, 0.5)',  // bronze
 };
 
-export function LeaderboardRow({ rank, agentId, level = 1, xp = 0, trend = 'flat' }) {
+export function LeaderboardRow({ rank, agentId, level = 1, xp = 0, trend = 'flat', xpDelta7d = 0 }) {
   const rankLabel = AGENT_RANK[agentId] || '—';
   const color = AGENT_COLOR[agentId] || 'var(--text-muted)';
-  const trendIcon = trend === 'up' ? '▲' : trend === 'down' ? '▼' : '—';
-  const trendColor = trend === 'up' ? 'var(--status-active)' : trend === 'down' ? 'var(--status-blocked)' : 'var(--text-muted)';
+  const deltaDirection = xpDelta7d > 0 ? 'up' : xpDelta7d < 0 ? 'down' : null;
   return (
     <div style={{
       display: 'grid',
@@ -47,12 +46,12 @@ export function LeaderboardRow({ rank, agentId, level = 1, xp = 0, trend = 'flat
         fontSize: 13,
         color: 'var(--text-primary)',
       }}>{xp.toLocaleString()}</span>
-      <span style={{
-        gridColumn: '1 / -1',
-        textAlign: 'right',
-        fontSize: 10,
-        color: trendColor,
-      }}>{trendIcon}</span>
+      {deltaDirection && (
+        <div className={`bento-card-delta ${deltaDirection}`} style={{ gridColumn: '1 / -1', justifyContent: 'flex-end' }}>
+          <span>{deltaDirection === 'up' ? '▲' : '▼'} {Math.abs(xpDelta7d)} XP</span>
+          <span className="bento-card-timeframe">7d</span>
+        </div>
+      )}
     </div>
   );
 }

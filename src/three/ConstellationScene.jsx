@@ -10,6 +10,7 @@ import { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { MessageParticle } from './MessageParticle';
 
 const AGENT_COLOR = {
   'sevin': '#ff6b35', 'overseer': '#3b82f6', 'elevin': '#84cc16',
@@ -31,11 +32,12 @@ function wrapAxis(v, half) {
   return v;
 }
 
+// Tier 2b polish: drift speed scaled -25% (0.04→0.03, 0.025→0.019, 0.03→0.022)
 const HERO_ATOMS = HERO_AGENT_IDS.map((id, i) => ({
   id,
   color: AGENT_COLOR[id],
   startPos: new THREE.Vector3(rand(-BOUND.x * 0.7, BOUND.x * 0.7), rand(-BOUND.y * 0.6, BOUND.y * 0.6), rand(-BOUND.z * 0.5, BOUND.z * 0.5)),
-  velocity: new THREE.Vector3(rand(-0.04, 0.04), rand(-0.025, 0.025), rand(-0.03, 0.03)),
+  velocity: new THREE.Vector3(rand(-0.03, 0.03), rand(-0.019, 0.019), rand(-0.022, 0.022)),
   seed: i * 137.5,
   nucleusSize: 0.85,
   haloSize: 1.8,
@@ -48,7 +50,7 @@ const BG_ATOMS = Array.from({ length: 18 }).map((_, i) => ({
   id: `bg-${i}`,
   color: AGENT_COLOR[Object.keys(AGENT_COLOR)[i % Object.keys(AGENT_COLOR).length]],
   startPos: new THREE.Vector3(rand(-BOUND.x, BOUND.x), rand(-BOUND.y, BOUND.y), rand(-BOUND.z, BOUND.z * 0.7)),
-  velocity: new THREE.Vector3(rand(-0.025, 0.025), rand(-0.018, 0.018), rand(-0.022, 0.022)),
+  velocity: new THREE.Vector3(rand(-0.019, 0.019), rand(-0.0135, 0.0135), rand(-0.0165, 0.0165)),
   seed: i * 53.3,
   nucleusSize: 0.3,
   haloSize: 0.6,
@@ -111,7 +113,7 @@ function OrbitRing({ atomPos, radius, tubeWidth, tilt, twist, color }) {
   return (
     <mesh ref={ref} rotation={[tilt, twist, twist * 0.4]}>
       <torusGeometry args={[radius, tubeWidth, 8, 64]} />
-      <meshBasicMaterial color={color} transparent opacity={0.7} toneMapped={false} />
+      <meshBasicMaterial color={color} transparent opacity={0.82} toneMapped={false} />
     </mesh>
   );
 }
@@ -235,17 +237,13 @@ function Atom({ atom }) {
   const velRef = useRef(atom.velocity.clone());
 
   useFrame(() => {
-    // Tiny random nudge for natural variation
-    velRef.current.x += (Math.random() - 0.5) * 0.0015;
-    velRef.current.y += (Math.random() - 0.5) * 0.001;
-    velRef.current.z += (Math.random() - 0.5) * 0.0012;
-    // Cap velocity
+    velRef.current.x += (Math.random() - 0.5) * 0.0011;
+    velRef.current.y += (Math.random() - 0.5) * 0.00075;
+    velRef.current.z += (Math.random() - 0.5) * 0.0009;
     const speed = velRef.current.length();
-    const maxSpeed = atom.isHero ? 0.06 : 0.04;
+    const maxSpeed = atom.isHero ? 0.045 : 0.03;
     if (speed > maxSpeed) velRef.current.multiplyScalar(maxSpeed / speed);
-    // Apply position
     posRef.current.add(velRef.current);
-    // Viewport wrap
     posRef.current.x = wrapAxis(posRef.current.x, BOUND.x);
     posRef.current.y = wrapAxis(posRef.current.y, BOUND.y);
     posRef.current.z = wrapAxis(posRef.current.z, BOUND.z);
@@ -340,8 +338,11 @@ function LightningBolt({ from, to, color, lifetime = 0.4, onExpire }) {
 
 function LightningManager({ busActivity, heroPositions }) {
   const [bolts, setBolts] = useState([]);
+  const [particles, setParticles] = useState([]);
   const lastBusLen = useRef(busActivity?.length || 0);
-  const nextAmbient = useRef(performance.now() / 1000 + 0.4);
+  // Tier 2b: ambient lightning slowed (was 0.5-1.9s → 1.2-3.0s) so MessageParticles
+  // (the actual bus-event payload visual) are the primary motion language.
+  const nextAmbient = useRef(performance.now() / 1000 + 0.8);
 
   useFrame(() => {
     const now = performance.now() / 1000;
@@ -358,7 +359,7 @@ function LightningManager({ busActivity, heroPositions }) {
           color: '#cce8ff',
         }]);
       }
-      nextAmbient.current = now + 0.5 + Math.random() * 1.4;
+      nextAmbient.current = now + 1.2 + Math.random() * 1.8;
     }
   });
 
@@ -366,17 +367,18 @@ function LightningManager({ busActivity, heroPositions }) {
     const len = busActivity?.length || 0;
     if (len > lastBusLen.current && heroPositions.length >= 2) {
       const newEvts = busActivity.slice(lastBusLen.current);
-      for (const _evt of newEvts.slice(-2)) {
+      for (const evt of newEvts.slice(-3)) {
         const fromIdx = Math.floor(Math.random() * heroPositions.length);
         let toIdx = Math.floor(Math.random() * heroPositions.length);
         if (toIdx === fromIdx) toIdx = (toIdx + 1) % heroPositions.length;
         const a = heroPositions[fromIdx].current?.clone();
         const b = heroPositions[toIdx].current?.clone();
         if (a && b) {
-          setBolts(prev => [...prev, {
+          const priority = evt?.priority || (Math.random() < 0.1 ? 'P0' : Math.random() < 0.4 ? 'P1' : 'P2');
+          setParticles(prev => [...prev, {
             id: performance.now() / 1000 + Math.random(),
             from: a, to: b,
-            color: '#ffd17a',
+            priority,
           }]);
         }
       }
@@ -385,6 +387,7 @@ function LightningManager({ busActivity, heroPositions }) {
   }, [busActivity, heroPositions]);
 
   const removeBolt = (id) => setBolts(prev => prev.filter(b => b.id !== id));
+  const removeParticle = (id) => setParticles(prev => prev.filter(p => p.id !== id));
 
   return (
     <>
@@ -393,6 +396,13 @@ function LightningManager({ busActivity, heroPositions }) {
           key={b.id}
           from={b.from} to={b.to} color={b.color}
           onExpire={() => removeBolt(b.id)}
+        />
+      ))}
+      {particles.map(p => (
+        <MessageParticle
+          key={p.id}
+          from={p.from} to={p.to} priority={p.priority}
+          onExpire={() => removeParticle(p.id)}
         />
       ))}
     </>
