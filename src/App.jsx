@@ -361,7 +361,7 @@ export default function App() {
           textAlign: 'center',
           borderTop: '1px solid rgba(255,255,255,0.05)',
         }}>
-          OpenClaw Master Workflow · Phase 5 · v3.0
+          OpenClaw · Pass 3 · Sevin Solutions
         </footer>
       </div>
     </div>

@@ -5,14 +5,17 @@
 
 import { useState } from 'react';
 
-// Navigation entries
+// Navigation entries — Pass 3 nav with SVG icons from public/nav/
+// Labels: only Dashboard→Bridge rebranded now (Bridge is built). Other pages
+// keep current labels until their phase redesign (P3.2 Markets / P3.3 Network
+// / P3.4 Lab / P3.5 Vault). Rebrand happens with each page redesign per Pass 3 SPEC §4.
 const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { key: 'comms',     label: 'Agent Comms', icon: '💬' },
-  { key: 'trading',   label: 'Trading', icon: '📈' },
-  { key: 'ai-city',   label: 'AI-City', icon: '🌆' },
-  { key: 'vault',     label: 'Private Vault', icon: '🔒' },
-  { key: 'research',  label: 'Research', icon: '🔬' },
+  { key: 'dashboard', label: 'Bridge',        iconSrc: '/nav/bridge.svg' },
+  { key: 'comms',     label: 'Agent Comms',   iconSrc: '/nav/network.svg' },
+  { key: 'trading',   label: 'Trading',       iconSrc: '/nav/markets.svg' },
+  { key: 'ai-city',   label: 'AI-City',       iconSrc: '/nav/ai-city.svg' },
+  { key: 'vault',     label: 'Private Vault', iconSrc: '/nav/vault.svg' },
+  { key: 'research',  label: 'Research',      iconSrc: '/nav/lab.svg' },
 ];
 
 
@@ -71,15 +74,19 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
+      {/* Navigation — SVG icons + ARIA accessibility per UI concepts ingestion */}
+      <nav className="sidebar-nav" aria-label="Main navigation">
         {NAV_ITEMS.map((item) => (
           <button
             key={item.key}
             className={`nav-item${currentPage === item.key ? ' active' : ''}`}
             onClick={() => onNavigate(item.key)}
+            aria-current={currentPage === item.key ? 'page' : undefined}
+            aria-label={`Navigate to ${item.label}`}
           >
-            <span className="nav-item-icon">{item.icon}</span>
+            <span className="nav-item-icon" aria-hidden="true">
+              <img src={item.iconSrc} alt="" width="20" height="20" style={{ display: 'block' }} />
+            </span>
             <span>{item.label}</span>
           </button>
         ))}

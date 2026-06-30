@@ -26,9 +26,9 @@ export function ArchitectMenu({ onSettings, onLogout }) {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <span style={{ color: '#4ade80' }}>●</span>
-        <span>Architect</span>
-        <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+        <span style={{ color: '#4ade80' }} aria-hidden="true">●</span>
+        <span>General Architect</span>
+        <span style={{ fontSize: 10, opacity: 0.6 }} aria-hidden="true">▾</span>
       </button>
       {open && (
         <div className="architect-menu-dropdown" role="menu">
