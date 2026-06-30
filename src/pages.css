@@ -2075,6 +2075,35 @@
   gap: 8px;
   transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
+
+/* WCAG 2.1 — visible focus rings for keyboard navigation (Tier 2 a11y) */
+.bento-card:focus-visible,
+button.nav-item:focus-visible,
+button.architect-menu-trigger:focus-visible,
+button.architect-menu-item:focus-visible,
+button.sidebar-collapse-toggle:focus-visible,
+button.sidebar-show-toggle:focus-visible {
+  outline: 2px solid var(--cat-cyan);
+  outline-offset: 2px;
+}
+
+/* Tier 2 — Bento card anatomy (per DataCamp/UXPin: Label → Value → Delta → Timeframe) */
+.bento-card-delta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.bento-card-delta.up { color: var(--status-active); }
+.bento-card-delta.down { color: var(--status-blocked); }
+.bento-card-timeframe {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
 .bento-card:hover {
   border-color: var(--border-strong);
   transform: translateY(-2px);

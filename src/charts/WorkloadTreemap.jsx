@@ -45,8 +45,16 @@ export function WorkloadTreemap({ width = 280, height = 220, agentTaskCounts }) 
     .padding(2)
     .round(true)(root);
 
+  // ARIA per WCAG WAI-ARIA Graphics Module
+  const totalTasks = Object.values(data).reduce((s, v) => s + v, 0);
+  const sortedLeaves = root.leaves().sort((a, b) => b.value - a.value).slice(0, 3);
+  const topThree = sortedLeaves.map(l => `${l.data.name.toUpperCase()} (${Math.floor(l.data.value)})`).join(', ');
+  const ariaLabel = `Workload treemap showing active task count per agent. Total ${Math.floor(totalTasks * 10) / 10} tasks across 13 agents. Top 3: ${topThree}.`;
+
   return (
-    <svg width={width} height={height}>
+    <svg width={width} height={height} role="img" aria-label={ariaLabel}>
+      <title>Workload Treemap</title>
+      <desc>{ariaLabel}</desc>
       {root.leaves().map(leaf => {
         const w = leaf.x1 - leaf.x0;
         const h = leaf.y1 - leaf.y0;

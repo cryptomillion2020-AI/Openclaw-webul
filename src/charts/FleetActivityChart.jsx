@@ -53,8 +53,14 @@ export function FleetActivityChart({ width = 540, height = 180, data }) {
 
   const colorScale = (id) => AGENT_COLOR[id] || '#888';
 
+  // ARIA screen-reader summary per WCAG WAI-ARIA Graphics Module
+  const totalEvents = chartData.reduce((s, d) => s + AGENT_IDS.reduce((s2, id) => s2 + (d[id] || 0), 0), 0);
+  const ariaLabel = `Fleet activity stacked bar chart for 24 hours. ${AGENT_IDS.length} agents represented by color. Total ${totalEvents} bus events. Peak hour shows ${maxTotal} events.`;
+
   return (
-    <svg width={width} height={height}>
+    <svg width={width} height={height} role="img" aria-label={ariaLabel}>
+      <title>Fleet Activity 24h</title>
+      <desc>{ariaLabel}</desc>
       <Group left={margin.left} top={margin.top}>
         <BarStack
           data={chartData}
