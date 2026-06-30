@@ -21,6 +21,11 @@ import { Trading }         from './pages/Trading';
 import AiCityPage          from './pages/AiCityPage';
 import { PrivateVault }    from './pages/PrivateVault';
 import { TeamResearch }    from './pages/TeamResearch';
+// Pass 3 P3.1 Tier 5 — new pages overlaid on ConstellationScene
+import { Markets }         from './pages/Markets';
+import { Network }         from './pages/Network';
+import { Lab }             from './pages/Lab';
+import { Vault }           from './pages/Vault';
 import { StaleBanner }    from './components/StaleBanner';
 import { ArchitectMenu }  from './components/ArchitectMenu';
 import { PageTransition } from './components/PageTransition';
@@ -86,7 +91,10 @@ export default function App() {
       let page = params.get('page');
       // Apply Pass 3 alias mapping
       if (page && ROUTE_ALIASES[page]) page = ROUTE_ALIASES[page];
-      const validPages = ['dashboard', 'bridge', 'comms', 'trading', 'ai-city', 'vault', 'research'];
+      const validPages = [
+        'dashboard', 'bridge', 'comms', 'trading', 'ai-city', 'vault', 'research',
+        'comms-legacy', 'trading-legacy', 'vault-legacy', 'research-legacy',
+      ];
       if (page && validPages.includes(page)) {
         return page;
       }
@@ -315,12 +323,17 @@ export default function App() {
     switch (currentPage) {
       case 'dashboard': return <Bridge {...pageProps} />;
       case 'bridge':    return <Bridge {...pageProps} />;
-      case 'comms':     return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
-      case 'trading':   return <Trading {...pageProps} />;
+      case 'comms':     return <Network busActivity={busActivity} onSend={send} />;
+      case 'trading':   return <Markets busActivity={busActivity} />;
       case 'ai-city':   return <AiCityPage />;
-      case 'vault':     return <PrivateVault />;
-      case 'research':  return <TeamResearch onSend={send} busActivity={busActivity} connected={connected} />;
-      default:          return <Dashboard {...pageProps} />;
+      case 'vault':     return <Vault busActivity={busActivity} />;
+      case 'research':  return <Lab busActivity={busActivity} />;
+      // Legacy pages reachable via explicit query param ?page=*-legacy
+      case 'comms-legacy':    return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
+      case 'trading-legacy':  return <Trading {...pageProps} />;
+      case 'vault-legacy':    return <PrivateVault />;
+      case 'research-legacy': return <TeamResearch onSend={send} busActivity={busActivity} connected={connected} />;
+      default:                return <Dashboard {...pageProps} />;
     }
   };
 

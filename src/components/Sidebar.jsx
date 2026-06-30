@@ -5,17 +5,14 @@
 
 import { useState } from 'react';
 
-// Navigation entries — Pass 3 nav with SVG icons from public/nav/
-// Labels: only Dashboard→Bridge rebranded now (Bridge is built). Other pages
-// keep current labels until their phase redesign (P3.2 Markets / P3.3 Network
-// / P3.4 Lab / P3.5 Vault). Rebrand happens with each page redesign per Pass 3 SPEC §4.
+// Navigation entries — Pass 3 P3.1 Tier 5 — all six pages rebranded
 const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Bridge',        iconSrc: '/nav/bridge.svg' },
-  { key: 'comms',     label: 'Agent Comms',   iconSrc: '/nav/network.svg' },
-  { key: 'trading',   label: 'Trading',       iconSrc: '/nav/markets.svg' },
-  { key: 'ai-city',   label: 'AI-City',       iconSrc: '/nav/ai-city.svg' },
-  { key: 'vault',     label: 'Private Vault', iconSrc: '/nav/vault.svg' },
-  { key: 'research',  label: 'Research',      iconSrc: '/nav/lab.svg' },
+  { key: 'dashboard', label: 'Bridge',  iconSrc: '/nav/bridge.svg' },
+  { key: 'comms',     label: 'Network', iconSrc: '/nav/network.svg' },
+  { key: 'trading',   label: 'Markets', iconSrc: '/nav/markets.svg' },
+  { key: 'ai-city',   label: 'AI-City', iconSrc: '/nav/ai-city.svg' },
+  { key: 'vault',     label: 'Vault',   iconSrc: '/nav/vault.svg' },
+  { key: 'research',  label: 'Lab',     iconSrc: '/nav/lab.svg' },
 ];
 
 

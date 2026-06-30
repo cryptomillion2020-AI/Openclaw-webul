@@ -1996,14 +1996,22 @@
 .sidebar { position: relative; transition: width 200ms ease-out; }
 
 /* ───── PASS 3.1 — BRIDGE BENTO LAYOUT ───── */
-.bridge-page {
+.bridge-page,
+.markets-page,
+.network-page,
+.lab-page,
+.vault-page {
   position: relative;
   min-height: 100vh;
   padding: 16px 24px;
   z-index: 1;
 }
 /* Three.js canvas goes EDGE-TO-EDGE (full-bleed); not constrained by grid */
-.bridge-page canvas {
+.bridge-page canvas,
+.markets-page canvas,
+.network-page canvas,
+.lab-page canvas,
+.vault-page canvas {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -2234,5 +2242,269 @@ button.sidebar-show-toggle:focus-visible {
   }
   .bento-missions-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============ TIER 5 — PASS 3 P3.1 PAGE GRIDS ============
+   All four pages share the bento-card visual contract; only the grid
+   layout + content differ per page. Markets gets dedicated TradingView
+   color tokens per Pineify ingestion. */
+
+:root {
+  --market-bullish: #26a69a;
+  --market-bearish: #ef5350;
+}
+
+/* ---------- MARKETS PAGE (replaces Trading) ---------- */
+.markets-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1.5fr 1.5fr 1fr;
+  grid-template-areas:
+    "pnl       pnl       gates"
+    "positions positions gates"
+    "trades    trades    risk";
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.markets-pnl { grid-area: pnl; }
+.markets-gates { grid-area: gates; }
+.markets-positions { grid-area: positions; }
+.markets-trades { grid-area: trades; }
+.markets-risk { grid-area: risk; }
+.markets-pnl .bento-card-hero { color: var(--market-bullish); }
+.markets-pnl.is-bearish .bento-card-hero { color: var(--market-bearish); }
+
+.gate-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.gate-row:last-child { border-bottom: none; }
+.gate-pill {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 8px;
+  border-radius: var(--radius-pill); letter-spacing: 0.5px;
+}
+.gate-pill.pass { background: rgba(34,197,94,0.15); color: var(--status-active); }
+.gate-pill.fail { background: rgba(239,83,80,0.15); color: var(--market-bearish); }
+
+.positions-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono); font-size: 12px;
+}
+.positions-table th, .positions-table td {
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.positions-table th {
+  color: var(--text-muted); font-weight: 500; font-size: 10px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.positions-table .pos-side.long  { color: var(--market-bullish); }
+.positions-table .pos-side.short { color: var(--market-bearish); }
+.positions-table .pos-pnl.profit { color: var(--market-bullish); }
+.positions-table .pos-pnl.loss   { color: var(--market-bearish); }
+
+/* ---------- NETWORK PAGE (replaces Agent Comms) ---------- */
+.network-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 280px 1fr 300px;
+  grid-template-areas:
+    "channels thread composer"
+    "channels thread roster";
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  min-height: calc(100vh - 100px);
+}
+.network-channels  { grid-area: channels; overflow-y: auto; max-height: calc(100vh - 100px); }
+.network-thread    { grid-area: thread;   overflow-y: auto; }
+.network-composer  { grid-area: composer; }
+.network-roster    { grid-area: roster; overflow-y: auto; max-height: calc(100vh - 200px); }
+
+.channel-row {
+  display: flex; gap: 8px; align-items: center;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; color: var(--text-primary);
+}
+.channel-row:hover, .channel-row.active { background: var(--bg-card-2); }
+.channel-row.active { border-left: 3px solid var(--cat-cyan); padding-left: 7px; }
+.channel-row-name { flex: 1; }
+.channel-row-unread {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  background: var(--cat-cyan); color: var(--bg-deep);
+  padding: 2px 6px; border-radius: var(--radius-pill);
+}
+
+.thread-msg {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 0; border-bottom: 1px solid var(--border-subtle);
+}
+.thread-msg-meta {
+  display: flex; gap: 8px; font-size: 11px; color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.thread-msg-from { color: var(--text-secondary); font-weight: 500; }
+.thread-msg-body { font-size: 13px; color: var(--text-primary); }
+
+.priority-pill {
+  font-family: var(--font-mono); font-size: 10px; padding: 1px 6px;
+  border-radius: var(--radius-pill); letter-spacing: 0.5px; font-weight: 700;
+}
+.priority-pill.P0 { background: rgba(239,83,80,0.2); color: var(--market-bearish); }
+.priority-pill.P1 { background: rgba(251,191,36,0.2); color: var(--xp-glow); }
+.priority-pill.P2 { background: rgba(34,211,238,0.2); color: var(--cat-cyan); }
+
+.composer-textarea {
+  width: 100%; box-sizing: border-box; min-height: 100px;
+  background: var(--bg-card-2); color: var(--text-primary);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  padding: 10px; font-family: var(--font-body); font-size: 13px; resize: vertical;
+}
+.composer-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.composer-priority {
+  background: var(--bg-card-2); color: var(--text-primary);
+  border: 1px solid var(--border-strong); border-radius: 6px;
+  padding: 6px 10px; font-family: var(--font-mono); font-size: 12px;
+}
+.composer-send {
+  background: var(--cat-cyan); color: var(--bg-deep); border: none;
+  border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-game); letter-spacing: 0.5px;
+}
+.composer-send:hover { background: #5feaff; }
+
+/* ---------- LAB PAGE (replaces Research) ---------- */
+.lab-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "query    routes"
+    "active   active"
+    "results  held";
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.lab-query   { grid-area: query; }
+.lab-routes  { grid-area: routes; }
+.lab-active  { grid-area: active; }
+.lab-results { grid-area: results; }
+.lab-held    { grid-area: held; }
+.route-chip {
+  display: inline-block; padding: 4px 10px; margin: 2px 4px 2px 0;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-secondary); cursor: pointer;
+}
+.route-chip.active { background: var(--cat-purple); color: white; border-color: var(--cat-purple); }
+.lab-query-row { padding: 6px 0; font-size: 13px; }
+.lab-query-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+/* ---------- VAULT PAGE (replaces Private Vault) ---------- */
+.vault-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-areas:
+    "lock     lock     airgap"
+    "items    items    items"
+    "audit    audit    audit";
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.vault-lock   { grid-area: lock; }
+.vault-airgap { grid-area: airgap; }
+.vault-items  { grid-area: items; }
+.vault-audit  { grid-area: audit; }
+.vault-lock .bento-card-hero { color: var(--cat-violet); }
+.airgap-indicator {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--status-airgap);
+}
+.airgap-indicator::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--status-airgap); box-shadow: 0 0 8px var(--status-airgap);
+  animation: airgap-pulse 2s ease-in-out infinite;
+}
+@keyframes airgap-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.vault-item-row {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 12px;
+  padding: 8px 0; font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.vault-item-redacted {
+  font-family: var(--font-mono); color: var(--text-muted);
+  letter-spacing: 2px;
+}
+.audit-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono); font-size: 11px;
+}
+.audit-table th, .audit-table td {
+  padding: 6px 10px; text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.audit-table th { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+@media (max-width: 1100px) {
+  .markets-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "pnl       gates"
+      "positions positions"
+      "trades    risk";
+  }
+  .network-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "channels thread"
+      "composer roster";
+  }
+  .lab-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "query" "routes" "active" "results" "held";
+  }
+  .vault-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "lock  airgap"
+      "items items"
+      "audit audit";
+  }
+}
+@media (max-width: 700px) {
+  .markets-grid, .network-grid, .lab-grid, .vault-grid {
+    grid-template-columns: 1fr;
+  }
+  .markets-grid {
+    grid-template-areas: "pnl" "gates" "positions" "trades" "risk";
+  }
+  .network-grid {
+    grid-template-areas: "channels" "thread" "composer" "roster";
+    min-height: auto;
+  }
+  .lab-grid {
+    grid-template-areas: "query" "routes" "active" "results" "held";
+  }
+  .vault-grid {
+    grid-template-areas: "lock" "airgap" "items" "audit";
   }
 }
