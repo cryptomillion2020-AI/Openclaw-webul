@@ -1,0 +1,304 @@
+/**
+ * shell-p4.css — Phase 4 Global Shell styling
+ * Graphite & Signal palette. Agent rail, nav, command strip.
+ *
+ * Import in App.css alongside phase4-tokens.css.
+ * Reference: 05-PHASE-4-WEBUI-REDESIGN-SPEC.md §4.1, §4.2
+ */
+
+/* ── Command strip (§4.2 item 1) ───────────────────────────────── */
+.command-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-gap);
+  padding: var(--space-grid) var(--space-gap);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-hair);
+  font-family: var(--font-body);
+  font-size: var(--size-label);
+  user-select: none;
+}
+
+.kill-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.kill-switch:hover {
+  border-color: var(--neg);
+  color: var(--neg);
+}
+
+.kill-switch.armed {
+  border-color: var(--neg);
+  background: var(--neg-dim);
+  color: var(--neg);
+  font-weight: 500;
+}
+
+.kill-icon { font-size: var(--size-body); }
+.kill-label { font-size: var(--size-caption); letter-spacing: 0.5px; }
+
+/* ── Mode indicator ────────────────────────────────────────────── */
+.mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--size-caption);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.mode-indicator:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mode-indicator.active {
+  border-color: var(--pos);
+  color: var(--pos);
+  background: var(--pos-dim);
+}
+
+.mode-label { letter-spacing: 0.5px; }
+.mode-value { font-weight: 500; letter-spacing: 1px; }
+
+/* ── Trading badge (§5.1) ──────────────────────────────────────── */
+.trading-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--size-caption);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.trading-badge.paper {
+  background: var(--idle);
+  color: var(--bg-void);
+}
+
+.trading-badge.live {
+  background: var(--neg);
+  color: var(--text-primary);
+  box-shadow: 0 0 8px var(--neg-dim);
+}
+
+.badge-dot { font-size: 10px; }
+
+/* ── Connection state ──────────────────────────────────────────── */
+.connection-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: var(--size-caption);
+  color: var(--text-tertiary);
+}
+
+.conn-dot { font-size: 10px; }
+.conn-timestamp {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.sidebar-p4 {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-void);
+  border-right: 1px solid var(--border-hair);
+  font-family: var(--font-body);
+  overflow-y: auto;
+}
+
+/* Logo */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-gap);
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.sidebar-logo-icon {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.sidebar-logo-name {
+  font-size: var(--size-body);
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.sidebar-logo-subtitle {
+  display: block;
+  font-size: var(--size-caption);
+  color: var(--text-tertiary);
+}
+
+/* Navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-grid);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--size-label);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.nav-item-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Agent rail (§4.1) */
+.sidebar-agent-rail {
+  flex: 1;
+  padding: var(--space-grid);
+  border-top: 1px solid var(--border-hair);
+  margin-top: auto;
+  overflow-y: auto;
+}
+
+.agent-rail-header {
+  font-size: var(--size-caption);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 1px;
+  padding: 4px 8px 8px;
+}
+
+.agent-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-rail-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--size-caption);
+  color: var(--text-secondary);
+  cursor: default;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.agent-rail-entry:hover {
+  background: var(--bg-surface);
+}
+
+.agent-status-dot {
+  font-size: 8px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.agent-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 60px;
+}
+
+.agent-state {
+  color: var(--text-tertiary);
+  flex: 1;
+}
+
+.agent-model {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* Status section (OAuth at bottom) */
+.sidebar-status {
+  padding: var(--space-grid) var(--space-gap);
+  border-top: 1px solid var(--border-hair);
+  font-size: var(--size-caption);
+  color: var(--text-tertiary);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.status-dot {
+  font-size: 8px;
+  flex-shrink: 0;
+}
+
+/* Collapse toggles */
+.sidebar-collapse-toggle,
+.sidebar-show-toggle {
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  background: transparent;
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: var(--size-body);
+  padding: 2px 6px;
+  z-index: 10;
+}
+
+.sidebar-show-toggle {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+}

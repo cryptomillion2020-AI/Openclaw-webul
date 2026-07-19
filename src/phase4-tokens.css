@@ -1,0 +1,190 @@
+/**
+ * phase4-tokens.css — Phase 4 "Graphite & Signal" design tokens
+ * Filed: 2026-07-05 by ELEVIN (Build Track C, Phase 4)
+ * Authority: SEVIN directive TRACK-C-P4-WEBUI-BUILD-20260705
+ *
+ * Replaces pass3-tokens.css with the muted professional ops-console palette.
+ * Reference: 05-PHASE-4-WEBUI-REDESIGN-SPEC.md §2 Design System
+ *
+ * Installation:
+ *   1. Import this file AFTER pass3-tokens.css in pages.css (or replace)
+ *   2. Comment out or remove pass3-tokens.css import
+ *   3. The new vars shadow the old ones — UI components using var(--bg-card)
+ *      etc. pick up the new values automatically.
+ */
+
+/* ── Fonts ──────────────────────────────────────────────────────── */
+/* Self-hosted WOFF2 files assumed in public/fonts/ (from P3.0 foundation) */
+/* Phase 4: Space Grotesk (display/headings), Inter (body/UI), JetBrains Mono (data) */
+/* REMOVED: Orbitron (game font — scoped to AI City only now) */
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-400.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-500.woff2') format('woff2');
+  font-weight: 500; font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-700.woff2') format('woff2');
+  font-weight: 700; font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-400.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-500.woff2') format('woff2');
+  font-weight: 500; font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+  font-weight: 500; font-display: swap;
+}
+
+/* ── Root tokens ────────────────────────────────────────────────── */
+:root {
+  /* --- Backgrounds --- */
+  --bg-void:        #0B0E13;  /* App background — near-black, slight blue */
+  --bg-surface:     #12161D;  /* Cards, panels */
+  --bg-raised:      #1A1F28;  /* Raised elements, headers, modals */
+  --bg-inset:       #0E1217;  /* Wells, inputs, code blocks */
+  --bg-overlay:     rgba(0, 0, 0, 0.55); /* Modal backdrops */
+
+  /* --- Borders --- */
+  --border-hair:    #232A34;  /* 1px separators */
+  --border-strong:  #2E3743;  /* Card outlines, focus rings base */
+  --border-accent:  #5B8DEF;  /* Active/focus border (accent) */
+
+  /* --- Text --- */
+  --text-primary:   #E6EAF0;  /* Not pure white — reduces glare on dark */
+  --text-secondary: #9BA6B4;  /* Labels, captions */
+  --text-tertiary:  #5D6875;  /* Disabled, hints */
+  --text-inverse:   #0B0E13;  /* Text on accent/pale backgrounds */
+
+  /* --- Accent (THE single accent) --- */
+  --accent:         #5B8DEF;  /* Calm desaturated blue — primary accent */
+  --accent-dim:     #3A5B9E;  /* Hover/pressed states */
+  --accent-subtle:  rgba(91, 141, 239, 0.12);  /* Ghost backgrounds */
+
+  /* --- Semantic colors — used ONLY for meaning, never decorative --- */
+  --pos:            #4CAF7D;  /* Gains, healthy, up — muted green */
+  --pos-dim:        rgba(76, 175, 125, 0.15);
+  --neg:            #E0685F;  /* Losses, errors, down — muted coral */
+  --neg-dim:        rgba(224, 104, 95, 0.15);
+  --warn:           #D4A24E;  /* Attention, pending — muted amber */
+  --warn-dim:       rgba(212, 162, 78, 0.15);
+  --idle:           #6B7684;  /* Sleeping/waiting — grey */
+
+  /* --- Agent categorical accents (13 agents) --- */
+  /* Used sparingly — agent dots and badges only. NOT for surfaces. */
+  --cat-sevin:      #5B8DEF;  /* SEVIN — uses the accent blue */
+  --cat-overseer:   #4CAF7D;  /* OVERSEER — pos green (steward of execution) */
+  --cat-elevin:     #7C8DA6;  /* ELEVIN — muted steel (engineering) */
+  --cat-tika:       #9BA6B4;  /* TIKA — text-secondary grey (scholar) */
+  --cat-quant:      #D4A24E;  /* QUANT — warn amber (trading) */
+  --cat-nexus:      #5D6875;  /* NEXUS — text-tertiary (synthesis, background) */
+  --cat-comms:      #6B7684;  /* COMMS — idle grey (operator) */
+  --cat-axis:       #A8B2C0;  /* AXIS — light grey (aide) */
+  --cat-cosmos:     #E0685F;  /* COSMOS — neg coral (art/creative) */
+  --cat-navigator:  #4CAF7D;  /* NAVIGATOR — pos green (guidance) */
+  --cat-stan-local: #7C8DA6;  /* STAN-LOCAL — muted steel (auditor) */
+  --cat-stan-hl:    #5D6875;  /* STAN-HL — tertiary grey (hardline) */
+  --cat-vault:      #9BA6B4;  /* VAULT — secondary grey (keeper) */
+  --cat-sage:       #D4A24E;  /* SAGE — warn amber (wisdom) */
+
+  /* --- Status dots (universal vocabulary) --- */
+  --status-active:      #4CAF7D;  /* pos — thinking, building */
+  --status-pending:     #D4A24E;  /* warn — waiting, queued */
+  --status-blocked:     #E0685F;  /* neg — blocked, error */
+  --status-idle:        #6B7684;  /* idle — sleeping, idle */
+  --status-airgap:      #5B8DEF;  /* accent — air-gapped agent */
+  --status-offline:     #5D6875;  /* tertiary — disconnected */
+  --status-live:        #E0685F;  /* neg (alert) — LIVE trading mode */
+  --status-paper:       #6B7684;  /* idle — PAPER trading mode */
+
+  /* --- Gamification (scoped to AI City ONLY) --- */
+  --xp-glow:        #D4A24E;
+  --level-up:       #4CAF7D;
+  --achievement:    #D4A24E;
+  --mission-active: #5B8DEF;
+  --mission-done:   #4CAF7D;
+
+  /* --- Typography --- */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Type scale (1.25 ratio) */
+  --size-micro:     10px;
+  --size-caption:   12px;
+  --size-label:     13px;
+  --size-body:      15px;
+  --size-h4:        19px;
+  --size-h3:        24px;
+  --size-h2:        30px;
+  --size-h1:        38px;
+
+  /* Data-specific sizes (mono at its row's size) */
+  --size-data-sm:   13px;  /* Inline data in body text */
+  --size-stat-lg:   30px;  /* Dashboard stat numerals */
+
+  /* --- Motion --- */
+  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:       120ms;
+  --dur-base:       200ms;
+  --dur-slow:       400ms;
+  --dur-data:       180ms;  /* Data update flash duration */
+
+  /* --- Radii + spacing --- */
+  --radius-card:    10px;   /* Soft, not pill */
+  --radius-sm:      6px;
+  --radius-pill:    999px;
+  --space-grid:     8px;    /* 8px spacing grid */
+  --space-gap:      16px;   /* Standard gap = 2 grid units */
+
+  /* --- Shadows (minimal — hairline borders preferred) --- */
+  --shadow-card:    0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-elev:    0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-modal:   0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ── P3 backward compatibility shims ────────────────────────────── */
+/* Maps old variable names to new ones for gradual migration.        */
+/* Remove these once all components reference the new vars.          */
+
+:root {
+  --bg-deep:        var(--bg-void);
+  --bg-card:        var(--bg-surface);
+  --bg-card-2:      var(--bg-raised);
+  --bg-card-elev:   var(--bg-raised);
+  --border-subtle:  var(--border-hair);
+  --border-strong:  var(--border-strong);
+  --text-primary:   var(--text-primary);
+  --text-secondary: var(--text-secondary);
+  --text-muted:     var(--text-tertiary);
+  --status-active:  var(--status-active);
+  --status-pending: var(--status-pending);
+  --status-blocked: var(--status-blocked);
+  --status-done:    var(--idle);
+  --status-hold:    var(--idle);
+  --status-dead:    var(--status-offline);
+  --font-body:      var(--font-body);
+  --font-display:   var(--font-display);
+  --font-mono:      var(--font-mono);
+  --radius-card:    var(--radius-card);
+}

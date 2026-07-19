@@ -1,31 +1,67 @@
 /**
- * Sidebar.jsx — Vision UI Sidebar
- * Updated to use exact Vision UI Dashboard React CSS class names
+ * Sidebar.jsx — Phase 4 Global Shell
+ * Graphite & Signal muted palette. Live agent rail with status dots.
+ * 7-destination IA per 05-PHASE-4-WEBUI-REDESIGN-SPEC.md §3, §4.1.
+ *
+ * Replaces: workspace-webui/src/components/Sidebar.jsx
+ * Filed: 2026-07-05 by ELEVIN (Build Track C, Phase 4)
  */
 
 import { useState } from 'react';
 
-// Navigation entries — Pass 3 P3.1 Tier 5 — all six pages rebranded
+// ── Phase 4 IA — 7 destinations (§3) ──────────────────────────────
 const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Bridge',  iconSrc: '/nav/bridge.svg' },
-  { key: 'comms',     label: 'Network', iconSrc: '/nav/network.svg' },
-  { key: 'trading',   label: 'Markets', iconSrc: '/nav/markets.svg' },
-  { key: 'ai-city',   label: 'AI-City', iconSrc: '/nav/ai-city.svg' },
-  { key: 'vault',     label: 'Vault',   iconSrc: '/nav/vault.svg' },
-  { key: 'research',  label: 'Lab',     iconSrc: '/nav/lab.svg' },
+  { key: 'dashboard', label: 'Dashboard',  icon: '◈' },
+  { key: 'comms',     label: 'Comms',      icon: '◎' },
+  { key: 'trading',   label: 'Trading',    icon: '▣' },
+  { key: 'research',  label: 'Research',   icon: '◉' },
+  { key: 'ai-city',   label: 'AI City',    icon: '◇' },
+  { key: 'network',   label: 'Network',    icon: '⊞' },
+  { key: 'vault',     label: 'Vault',      icon: '⬡' },
 ];
 
+// ── Agent state machine (§4.1) — vocabulary crossing ops + city ───
+const AGENT_STATES = [
+  { agent: 'SEVIN',     state: 'thinking',     model: 'claude-4' },
+  { agent: 'OVERSEER',  state: 'monitoring',   model: 'claude-4' },
+  { agent: 'ELEVIN',    state: 'building',     model: 'sonnet-4' },
+  { agent: 'TIKA',      state: 'researching',  model: 'haiku-3.5' },
+  { agent: 'QUANT',     state: 'idle',         model: 'sonnet-4' },
+  { agent: 'NEXUS',     state: 'synthesizing', model: 'haiku-3.5' },
+  { agent: 'COMMS',     state: 'waiting',      model: 'haiku-3.5' },
+  { agent: 'AXIS',      state: 'idle',         model: 'haiku-3.5' },
+  { agent: 'COSMOS',    state: 'idle',         model: 'sonnet-4' },
+  { agent: 'NAVIGATOR', state: 'idle',         model: 'haiku-3.5' },
+  { agent: 'STAN',      state: 'thinking',     model: 'claude-4' },
+  { agent: 'VAULT',     state: 'idle',         model: 'haiku-3.5' },
+  { agent: 'SAGE',      state: 'monitoring',   model: 'haiku-3.5' },
+];
 
-const isAuthorized = (status) => {
-  if (!status) return false;
-  if (status === 'connected' || status === 'authorized') return true;
-  if (typeof status === 'object') {
-    return Boolean(status.auth_mode) && status.auth_mode !== 'none';
-  }
-  return false;
+// ── Status dot color mapping ──────────────────────────────────────
+const STATE_COLORS = {
+  'thinking':     'var(--status-active)',
+  'building':     'var(--status-active)',
+  'researching':  'var(--status-active)',
+  'monitoring':   'var(--status-active)',
+  'synthesizing': 'var(--status-active)',
+  'waiting':      'var(--status-pending)',
+  'idle':         'var(--status-idle)',
 };
 
-const formatAuthStatus = (status) => {
+function statusColor(state) {
+  return STATE_COLORS[state] || 'var(--status-offline)';
+}
+
+// ── OAuth helpers (preserved from P3) ─────────────────────────────
+function isAuthorized(status) {
+  if (!status) return false;
+  if (status === 'connected' || status === 'authorized') return true;
+  if (typeof status === 'object')
+    return Boolean(status.auth_mode) && status.auth_mode !== 'none';
+  return false;
+}
+
+function formatAuthStatus(status) {
   if (!status) return 'Not Authorized';
   if (status === 'connected' || status === 'authorized') return 'Authorized';
   if (typeof status === 'object') {
@@ -33,12 +69,14 @@ const formatAuthStatus = (status) => {
     return status.auth_mode || 'unknown';
   }
   return String(status);
-};
+}
 
+// ═══════════════════════════════════════════════════════════════════
+// Sidebar component
+// ═══════════════════════════════════════════════════════════════════
 export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  // When collapsed: render only the toggle button (sidebar fully hidden)
   if (collapsed) {
     return (
       <button
@@ -53,7 +91,8 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
   }
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar sidebar-p4">
+      {/* ── Collapse toggle ── */}
       <button
         className="sidebar-collapse-toggle"
         onClick={() => setCollapsed(true)}
@@ -62,16 +101,17 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
       >
         ‹
       </button>
-      {/* Logo */}
+
+      {/* ── Logo / Title ── */}
       <div className="sidebar-logo">
-        <span className="sidebar-logo-icon">⚡</span>
+        <span className="sidebar-logo-icon">◆</span>
         <div className="sidebar-logo-text">
-          <span className="sidebar-logo-name">SEVIN</span>
-          <span className="sidebar-logo-subtitle">System Engineer for Virtual Information Networks</span>
+          <span className="sidebar-logo-name">OpenClaw</span>
+          <span className="sidebar-logo-subtitle">Operations Console</span>
         </div>
       </div>
 
-      {/* Navigation — SVG icons + ARIA accessibility per UI concepts ingestion */}
+      {/* ── Navigation (§3 IA — 7 destinations) ── */}
       <nav className="sidebar-nav" aria-label="Main navigation">
         {NAV_ITEMS.map((item) => (
           <button
@@ -81,30 +121,56 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
             aria-current={currentPage === item.key ? 'page' : undefined}
             aria-label={`Navigate to ${item.label}`}
           >
-            <span className="nav-item-icon" aria-hidden="true">
-              <img src={item.iconSrc} alt="" width="20" height="20" style={{ display: 'block' }} />
-            </span>
-            <span>{item.label}</span>
+            <span className="nav-item-icon" aria-hidden="true">{item.icon}</span>
+            <span className="nav-item-label">{item.label}</span>
           </button>
         ))}
       </nav>
 
-      {/* Status Section */}
+      {/* ── Live agent rail (§4.1) — status dots + state ── */}
+      <div className="sidebar-agent-rail">
+        <div className="agent-rail-header">AGENTS</div>
+        <div className="agent-rail-list">
+          {AGENT_STATES.map((a) => (
+            <div key={a.agent} className="agent-rail-entry">
+              <span
+                className="agent-status-dot"
+                style={{ color: statusColor(a.state) }}
+                aria-hidden="true"
+              >
+                ●
+              </span>
+              <span className="agent-name">{a.agent}</span>
+              <span className="agent-state">{a.state}</span>
+              <span className="agent-model">{a.model}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Connection status ── */}
       <div className="sidebar-status">
         <div className="status-item">
-          <span className={`status-dot${connected ? '' : ' offline'}`}></span>
+          <span
+            className="status-dot"
+            style={{ color: connected ? 'var(--status-active)' : 'var(--status-offline)' }}
+          >
+            ●
+          </span>
           <span>{connected ? 'Connected' : 'Disconnected'}</span>
         </div>
-
-        {/* OAuth status dots */}
-        {Object.entries(oauthStatus).length > 0 && (
+        {Object.entries(oauthStatus).length > 0 &&
           Object.entries(oauthStatus).map(([provider, status]) => (
             <div className="status-item" key={provider}>
-              <span className={`status-dot${isAuthorized(status) ? '' : ' offline'}`}></span>
+              <span
+                className="status-dot"
+                style={{ color: isAuthorized(status) ? 'var(--status-active)' : 'var(--status-offline)' }}
+              >
+                ●
+              </span>
               <span>{provider}: {formatAuthStatus(status)}</span>
             </div>
-          ))
-        )}
+          ))}
       </div>
     </aside>
   );
