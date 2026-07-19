@@ -3,7 +3,8 @@
  * Uses inline styles + App.css modal classes
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { soundManager } from '../lib/soundManager';
 
 const styles = {
   cluster: {
@@ -37,6 +38,9 @@ export function ControlsCluster({ killActive, mode3Conditions, mode3Enabled, onS
   const [showMode3Modal, setShowMode3Modal] = useState(false);
   const [typedConfirm, setTypedConfirm] = useState('');
   const [confirmError, setConfirmError] = useState('');
+  const [soundsMuted, setSoundsMuted] = useState(soundManager.isMuted());
+
+  useEffect(() => soundManager.onMuteChange(setSoundsMuted), []);
 
   const allMet = mode3Conditions &&
     Object.values(mode3Conditions).filter(v => typeof v === 'boolean').every(v => v === true);
@@ -96,6 +100,18 @@ export function ControlsCluster({ killActive, mode3Conditions, mode3Enabled, onS
         <button style={mode3BtnStyle} onClick={handleMode3Click} title={isMode3Active ? 'Deactivate' : allMet ? 'Ready' : 'Locked'}>
           <span>📊</span>
           <span>{isMode3Active ? 'Mode 3 ON' : 'Mode 3'}</span>
+        </button>
+        <button
+          style={{
+            ...styles.btn,
+            background: soundsMuted ? 'rgba(255,255,255,0.05)' : 'rgba(1,181,116,0.15)',
+            color: soundsMuted ? 'rgba(255,255,255,0.4)' : '#01B574',
+            border: soundsMuted ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(1,181,116,0.3)',
+          }}
+          onClick={() => soundManager.toggle()}
+          title={soundsMuted ? 'Enable UI sounds' : 'Mute UI sounds'}
+        >
+          <span>{soundsMuted ? '🔇' : '🔊'}</span>
         </button>
       </div>
 

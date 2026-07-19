@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket }   from './hooks/useWebSocket';
+import { soundManager }    from './lib/soundManager';
 import { Sidebar }         from './components/Sidebar';
 import { Dashboard }       from './pages/Dashboard';
 import { Bridge }          from './pages/Bridge';
@@ -171,6 +172,9 @@ export default function App() {
       setActiveProjects(msg.active_projects || []);
       setActiveTasks(msg.active_tasks || []);
     } else if (msg.type === 'task_update') {
+      if ((msg.tasks || []).some(t => t.status === 'completed' || t.status === 'complete')) {
+        soundManager.play('task-complete');
+      }
       // Merge changed tasks into existing tasks array
       setTasks(prev => {
         const updated = [...prev];
@@ -186,12 +190,15 @@ export default function App() {
       });
     } else if (msg.type === 'kill_switch_update') {
       setKillActive(msg.active);
+      if (msg.active) soundManager.play('p0-alert');
     } else if (msg.type === 'mode3_conditions_update') {
       setMode3Conditions(msg.mode3_conditions || {});
       setMode3Enabled(msg.mode3_enabled || false);
     } else if (msg.type === 'mode3_confirm_error') {
       console.warn('[Mode3] Confirm error:', msg.error);
+      soundManager.play('error');
     } else if (msg.type === 'bus_activity_delta') {
+      soundManager.play('bus-message');
       setBusActivity(prev => {
         const combined = [...prev, ...(msg.events || [])];
         const seen = new Map();
@@ -199,6 +206,7 @@ export default function App() {
         return [...seen.values()].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
     } else if (msg.type === 'comms_delta') {
+      soundManager.play('bus-message');
       // Immediate Comms message broadcast (includes full body)
       const event = normalizeCommsDelta(msg);
       // Backwards-compat: keep busActivity in sync for non-Comms consumers
@@ -266,6 +274,10 @@ export default function App() {
     channels: SUBSCRIBE_CHANNELS,
     autoConnect: true,
   });
+
+  useEffect(() => {
+    if (connected) soundManager.play('agent-online');
+  }, [connected]);
 
   // ---------------------------------------------------------------------------
   // Wave 4b-A: local-echo enqueue for AgentComms
