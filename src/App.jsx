@@ -75,6 +75,19 @@ function normalizeCommsDelta(msg) {
   };
 }
 
+function initialFleetActivity(msg) {
+  const busEvents = Array.isArray(msg.bus_activity) ? msg.bus_activity : [];
+  const retainedComms = Object.values(msg.comms_history || {})
+    .flatMap(events => Array.isArray(events) ? events : [])
+    .map(normalizeCommsDelta);
+  const seen = new Map();
+  [...busEvents, ...retainedComms].forEach(event => {
+    const key = `${event.dir || ''}::${event.file || event.id || event.ts || ''}`;
+    if (!seen.has(key) || (seen.get(key).mtime || 0) < (event.mtime || 0)) seen.set(key, event);
+  });
+  return [...seen.values()].sort((a, b) => (a.mtime || 0) - (b.mtime || 0)).slice(-50);
+}
+
 export default function App() {
   // Pass 3 rebrand: URL aliases for page renames (Architect 2026-06-27)
   // /bridge → dashboard, /markets → trading, /lab → research, /network → comms
@@ -138,7 +151,7 @@ export default function App() {
       });
       setMode3Enabled(msg.mode3_enabled || false);
       setOauthStatus(msg.oauth_status || {});
-      setBusActivity(msg.bus_activity || []);
+      setBusActivity(initialFleetActivity(msg));
       setTasks(msg.tasks || []);
       setActiveProjects(msg.active_projects || []);
       setActiveTasks(msg.active_tasks || []);
@@ -337,7 +350,7 @@ export default function App() {
       case 'bridge':    return <Bridge {...pageProps} />;
       case 'comms':     return <Network busActivity={busActivity} onSend={send} />;
       case 'trading':   return <Markets busActivity={busActivity} />;
-      case 'ai-city':   return <AiCityPage />;
+      case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} />;
       case 'vault':     return <Vault busActivity={busActivity} />;
       case 'research':  return <Lab busActivity={busActivity} />;
       // Legacy pages reachable via explicit query param ?page=*-legacy
@@ -353,12 +366,14 @@ export default function App() {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <div className="app-layout">
+    <div className={`app-layout${currentPage === 'ai-city' ? ' app-layout--aicity' : ''}`}>
       <Sidebar
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         oauthStatus={oauthStatus}
         connected={connected}
+        tasks={tasks}
+        activeTasks={activeTasks}
       />
 
       <StaleBanner
@@ -367,8 +382,8 @@ export default function App() {
         onReconnect={() => window.location.reload()}
       />
 
-      <div className="main-content">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px 0' }}>
+      <div className={`main-content${currentPage === 'ai-city' ? ' main-content--aicity' : ''}`}>
+        <div className="architect-menu-row" style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px 0' }}>
           <ArchitectMenu
             onSettings={() => setCurrentPage('settings')}
             onLogout={() => window.location.href = '/cdn-cgi/access/logout'}
@@ -378,7 +393,7 @@ export default function App() {
           {renderPage()}
         </PageTransition>
 
-        <footer style={{
+        <footer className="app-footer" style={{
           marginTop: 'auto',
           padding: '16px 0 8px',
           fontSize: '10px',

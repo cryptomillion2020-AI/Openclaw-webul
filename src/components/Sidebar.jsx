@@ -7,7 +7,9 @@
  * Filed: 2026-07-05 by ELEVIN (Build Track C, Phase 4)
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { isCurrentlyActiveTask } from '../lib/task-helpers';
+import { getAgentRuntime } from '../lib/agent-runtime';
 
 // ── Phase 4 IA — 7 destinations (§3) ──────────────────────────────
 const NAV_ITEMS = [
@@ -21,21 +23,7 @@ const NAV_ITEMS = [
 ];
 
 // ── Agent state machine (§4.1) — vocabulary crossing ops + city ───
-const AGENT_STATES = [
-  { agent: 'SEVIN',     state: 'thinking',     model: 'claude-4' },
-  { agent: 'OVERSEER',  state: 'monitoring',   model: 'claude-4' },
-  { agent: 'ELEVIN',    state: 'building',     model: 'sonnet-4' },
-  { agent: 'TIKA',      state: 'researching',  model: 'haiku-3.5' },
-  { agent: 'QUANT',     state: 'idle',         model: 'sonnet-4' },
-  { agent: 'NEXUS',     state: 'synthesizing', model: 'haiku-3.5' },
-  { agent: 'COMMS',     state: 'waiting',      model: 'haiku-3.5' },
-  { agent: 'AXIS',      state: 'idle',         model: 'haiku-3.5' },
-  { agent: 'COSMOS',    state: 'idle',         model: 'sonnet-4' },
-  { agent: 'NAVIGATOR', state: 'idle',         model: 'haiku-3.5' },
-  { agent: 'STAN',      state: 'thinking',     model: 'claude-4' },
-  { agent: 'VAULT',     state: 'idle',         model: 'haiku-3.5' },
-  { agent: 'SAGE',      state: 'monitoring',   model: 'haiku-3.5' },
-];
+const AGENT_IDS = ['SEVIN', 'OVERSEER', 'ELEVIN', 'TIKA', 'QUANT', 'NEXUS', 'COMMS', 'AXIS', 'COSMOS', 'NAVIGATOR', 'STAN', 'ROOTS', 'VAULT', 'SAGE'];
 
 // ── Status dot color mapping ──────────────────────────────────────
 const STATE_COLORS = {
@@ -46,10 +34,24 @@ const STATE_COLORS = {
   'synthesizing': 'var(--status-active)',
   'waiting':      'var(--status-pending)',
   'idle':         'var(--status-idle)',
+  'in progress':  'var(--status-active)',
+  'active':       'var(--status-active)',
+  'pending':      'var(--status-pending)',
+  'blocked':      'var(--status-pending)',
+  'done':         'var(--status-idle)',
+  'complete':     'var(--status-idle)',
+  'no active task': 'var(--status-idle)',
 };
 
 function statusColor(state) {
   return STATE_COLORS[state] || 'var(--status-offline)';
+}
+
+function representativeTaskRank(task) {
+  if (isCurrentlyActiveTask(task?.status)) return 3;
+  if (task?.status === 'done' || task?.status === 'complete' || task?.status === 'closed') return 2;
+  if (task?.status === 'pending') return 1;
+  return 0;
 }
 
 // ── OAuth helpers (preserved from P3) ─────────────────────────────
@@ -74,8 +76,29 @@ function formatAuthStatus(status) {
 // ═══════════════════════════════════════════════════════════════════
 // Sidebar component
 // ═══════════════════════════════════════════════════════════════════
-export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
+export function Sidebar({ currentPage, onNavigate, oauthStatus, connected, tasks = [], activeTasks = [] }) {
   const [collapsed, setCollapsed] = useState(false);
+  const agentRows = useMemo(() => {
+    const selected = new Map();
+    [...(Array.isArray(activeTasks) ? activeTasks : []), ...(Array.isArray(tasks) ? tasks : [])].forEach(task => {
+      let agent = String(task.assignee ?? task.agentId ?? '').toUpperCase();
+      if (agent === 'MAIN') agent = 'SEVIN';
+      if (!AGENT_IDS.includes(agent)) return;
+      const current = selected.get(agent);
+      if (!current || representativeTaskRank(task) > representativeTaskRank(current)) selected.set(agent, task);
+    });
+    return AGENT_IDS.map(agent => {
+      const task = selected.get(agent);
+      const runtime = getAgentRuntime(agent);
+      return {
+        agent,
+        state: task?.status ? String(task.status).replaceAll('_', ' ') : 'no active task',
+        task: task?.title || task?.label || 'No task reported',
+        substrate: runtime?.runtime || 'Runtime unavailable',
+        model: runtime?.shortModel || 'Model unavailable',
+      };
+    });
+  }, [activeTasks, tasks]);
 
   if (collapsed) {
     return (
@@ -91,7 +114,7 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
   }
 
   return (
-    <aside className="sidebar sidebar-p4">
+    <aside className={`sidebar sidebar-p4${currentPage === 'ai-city' ? ' sidebar--aicity' : ''}`}>
       {/* ── Collapse toggle ── */}
       <button
         className="sidebar-collapse-toggle"
@@ -106,8 +129,8 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
       <div className="sidebar-logo">
         <span className="sidebar-logo-icon">◆</span>
         <div className="sidebar-logo-text">
-          <span className="sidebar-logo-name">OpenClaw</span>
-          <span className="sidebar-logo-subtitle">Operations Console</span>
+          <span className="sidebar-logo-name">SEVIN</span>
+          <span className="sidebar-logo-subtitle">System engineer for virtual information networks</span>
         </div>
       </div>
 
@@ -131,8 +154,8 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
       <div className="sidebar-agent-rail">
         <div className="agent-rail-header">AGENTS</div>
         <div className="agent-rail-list">
-          {AGENT_STATES.map((a) => (
-            <div key={a.agent} className="agent-rail-entry">
+          {agentRows.map((a) => (
+            <div key={a.agent} className="agent-rail-entry" title={a.task}>
               <span
                 className="agent-status-dot"
                 style={{ color: statusColor(a.state) }}
@@ -142,7 +165,8 @@ export function Sidebar({ currentPage, onNavigate, oauthStatus, connected }) {
               </span>
               <span className="agent-name">{a.agent}</span>
               <span className="agent-state">{a.state}</span>
-              <span className="agent-model">{a.model}</span>
+              <span className="agent-substrate">{a.substrate}</span>
+              <span className="agent-model">model {a.model}</span>
             </div>
           ))}
         </div>

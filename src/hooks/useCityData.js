@@ -1,171 +1,123 @@
 /**
- * useCityData.js — Per-agent animation state machine + WebSocket integration
- * Phase 5 FE-01 — Track A
- *
- * Manages per-agent state: active, pending_decision, idle_day, idle_night.
- * State transitions based on task activity and time of day.
- * Stub data for now; wire to WebSocket AI-City event stream in Track B pass.
+ * useCityData — normalized AI-City view of the live WebSocket full_state surface.
+ * No sample tasks, randomized activity, models, or substrate values are created here.
  */
-
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { applyDebugCycleOverride } from '../components/AiCity/DebugStateCycler';
+import { isCompleteTask, isCurrentlyActiveTask } from '../lib/task-helpers';
 
-// Agent color palette (mirrors AiCityAssetLoader)
 const AGENT_COLORS = {
-  sevin:     '#FFD700',
-  overseer:  '#1565C0',
-  elevin:    '#1B5E20',
-  tika:      '#7B1FA2',
-  quant:     '#FF6F00',
-  navigator: '#00BCD4',
-  cosmos:    '#E91E63',
-  axis:      '#E65100',
-  comms:     '#00897B',
-  nexus:     '#FFFFFF',
-  roots:     '#558B2F',
-  stan:      '#616161',
-  vault:     '#37474F',
+  sevin: '#73a7ff', overseer: '#60d9ad', elevin: '#90a1ba', tika: '#9aa7bb',
+  quant: '#e9b85d', navigator: '#73a7ff', cosmos: '#ff8f88', axis: '#b9c4d4',
+  comms: '#7f8ea5', nexus: '#8d9eb6', roots: '#a8c46b', stan: '#7f90aa',
+  vault: '#566174', sage: '#e9b85d',
 };
 
 const AGENT_NAMES = Object.keys(AGENT_COLORS);
+const AGENT_ALIASES = { main: 'sevin' };
 
-// Available states
-const STATES = ['active', 'pending', 'idle_day', 'idle_night'];
+function normalizeAgent(value) {
+  const normalized = String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  return AGENT_ALIASES[normalized] || (AGENT_NAMES.includes(normalized) ? normalized : null);
+}
 
-// Grid positions (isometric layout — 4 rows, staggered)
-function getDefaultPosition(index) {
+function taskAgent(task) {
+  return normalizeAgent(task?.assignee ?? task?.agentId ?? task?.agent_id ?? task?.owner ?? task?.assigned_to);
+}
+
+function representativeTaskRank(task) {
+  if (isCurrentlyActiveTask(task?.status)) return 3;
+  if (isCompleteTask(task?.status)) return 2;
+  if (task?.status === 'pending') return 1;
+  return 0;
+}
+
+function selectTasks(tasks, activeTasks) {
+  const selected = new Map();
+  [...activeTasks, ...tasks].forEach(task => {
+    const agent = taskAgent(task);
+    if (!agent) return;
+    const current = selected.get(agent);
+    if (!current || representativeTaskRank(task) > representativeTaskRank(current)) {
+      selected.set(agent, task);
+    }
+  });
+  return selected;
+}
+
+function stateForTask(task, timeOfDay) {
+  if (!task) return timeOfDay === 'night' ? 'idle_night' : 'idle_day';
+  if (isCurrentlyActiveTask(task.status)) return 'active';
+  if (task.status === 'pending') return 'pending';
+  if (isCompleteTask(task.status)) return timeOfDay === 'night' ? 'idle_night' : 'idle_day';
+  return timeOfDay === 'night' ? 'idle_night' : 'idle_day';
+}
+
+function defaultPosition(index) {
   const col = index % 5;
   const row = Math.floor(index / 5);
-  return {
-    x: 150 + col * 140,
-    y: 100 + row * 130,
-  };
+  return { x: 150 + col * 140, y: 100 + row * 130 };
 }
 
-// ---------------------------------------------------------------------------
-// Stub data generator (for dev before WS integration)
-// ---------------------------------------------------------------------------
-function generateStubAgents() {
-  return AGENT_NAMES.map((name, i) => ({
-    name,
-    color: AGENT_COLORS[name],
-    currentState: STATES[i % 4],
-    position: getDefaultPosition(i),
-    task: null,
-    lastActive: Date.now() - Math.random() * 60000,
-  }));
-}
+export function useCityData({
+  connected = false,
+  tasks = [],
+  activeTasks = [],
+  oauthStatus = {},
+  busActivity = [],
+} = {}) {
+  const [timeOfDay, setTimeOfDay] = useState('day');
+  const [stateOverrides, setStateOverrides] = useState({});
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeActiveTasks = Array.isArray(activeTasks) ? activeTasks : [];
+  const selectedTasks = useMemo(
+    () => selectTasks(safeTasks, safeActiveTasks),
+    [safeTasks, safeActiveTasks],
+  );
 
-/**
- * @param {Object} options
- * @param {boolean} options.connected — WebSocket connection state (for future WS integration)
- */
-export function useCityData({ connected = false } = {}) {
-  const [agents, setAgents] = useState(() => generateStubAgents());
-  const [buildings, setBuildings] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [timeOfDay, setTimeOfDay] = useState('day'); // 'day' | 'night'
-  const intervalRef = useRef(null);
-
-  // -----------------------------------------------------------------------
-  // Cycle agent states periodically (stub behavior — simulates real activity)
-  // -----------------------------------------------------------------------
-  useEffect(() => {
-    // Check for debug-cycle override BEFORE setting up the normal interval
-    if (import.meta.env.DEV && typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('debug-cycle') === '1') {
-        console.log('[useCityData] Debug cycle override active — skipping normal interval');
-        const cleanup = applyDebugCycleOverride(setAgentState, setTimeOfDay);
-        return () => {
-          if (typeof cleanup === 'function') cleanup();
-        };
-      }
-    }
-
-    // Normal stub cycle: Rotate agent states every 8s for demo purposes
-    intervalRef.current = setInterval(() => {
-      setAgents((prev) =>
-        prev.map((agent) => {
-          // Occasionally toggle state
-          const roll = Math.random();
-          const currentIdx = STATES.indexOf(agent.currentState);
-          let nextState;
-          if (roll < 0.3) {
-            // Stay in same state
-            nextState = agent.currentState;
-          } else if (roll < 0.5) {
-            // Go to next state in cycle
-            nextState = STATES[(currentIdx + 1) % STATES.length];
-          } else {
-            // Go to random state
-            nextState = STATES[Math.floor(Math.random() * STATES.length)];
-          }
-          return { ...agent, currentState: nextState };
-        })
-      );
-    }, 8000);
-
-    return () => clearInterval(intervalRef.current);
-  }, [setAgentState, setTimeOfDay]);
-
-  // -----------------------------------------------------------------------
-  // Cycle day/night (every 30s) — skipped if debug-cycle is active
-  // -----------------------------------------------------------------------
-  useEffect(() => {
-    if (import.meta.env.DEV && typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('debug-cycle') === '1') {
-        console.log('[useCityData] Debug cycle active — skipping day/night timer');
-        return; // DebugStateCycler handles timeOfDay
-      }
-    }
-
-    const dayNightTimer = setInterval(() => {
-      setTimeOfDay((prev) => (prev === 'day' ? 'night' : 'day'));
-    }, 30000);
-    return () => clearInterval(dayNightTimer);
-  }, [setTimeOfDay]);
-
-  // -----------------------------------------------------------------------
-  // API
-  // -----------------------------------------------------------------------
-
-  /**
-   * Update a single agent's state (called by WS event handler in Track B).
-   */
   const setAgentState = useCallback((agentName, newState, taskInfo = null) => {
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.name === agentName
-          ? { ...a, currentState: newState, task: taskInfo, lastActive: Date.now() }
-          : a
-      )
-    );
+    const agent = normalizeAgent(agentName);
+    if (!agent) return;
+    setStateOverrides(previous => ({ ...previous, [agent]: { state: newState, task: taskInfo } }));
   }, []);
 
-  /**
-   * Build stub data (5 building categories).
-   */
+  const agents = useMemo(() => AGENT_NAMES.map((name, index) => {
+    const task = stateOverrides[name]?.task || selectedTasks.get(name) || null;
+    const profile = oauthStatus?.[name] || null;
+    return {
+      name,
+      color: AGENT_COLORS[name],
+      currentState: stateOverrides[name]?.state || stateForTask(task, timeOfDay),
+      position: defaultPosition(index),
+      task,
+      substrate: profile?.auth_mode || null,
+      fallbackMode: profile?.fallback_mode || null,
+      model: null,
+      connected,
+    };
+  }), [connected, oauthStatus, selectedTasks, stateOverrides, timeOfDay]);
+
   useEffect(() => {
-    const buildingCategories = [
-      { category: 'server-tower', x: 400, y: 300 },
-      { category: 'lab', x: 600, y: 200 },
-      { category: 'market-floor', x: 500, y: 450 },
-      { category: 'bunker', x: 300, y: 400 },
-      { category: 'broadcast-tower', x: 700, y: 350 },
-    ];
-    setBuildings(buildingCategories);
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug-cycle') === '1') return applyDebugCycleOverride(setAgentState, setTimeOfDay);
+    }
+    return undefined;
+  }, [setAgentState]);
+
+  useEffect(() => {
+    if (import.meta.env.DEV && typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).get('debug-cycle') === '1') return undefined;
+    const timer = setInterval(() => setTimeOfDay(previous => previous === 'day' ? 'night' : 'day'), 30000);
+    return () => clearInterval(timer);
   }, []);
 
   return {
     agents,
-    buildings,
-    tasks,
+    buildings: [],
+    tasks: [...safeActiveTasks, ...safeTasks],
+    busActivity: Array.isArray(busActivity) ? busActivity : [],
     timeOfDay,
     setAgentState,
   };

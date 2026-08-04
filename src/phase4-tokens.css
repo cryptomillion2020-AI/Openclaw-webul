@@ -1,16 +1,16 @@
 /**
- * phase4-tokens.css — Phase 4 "Graphite & Signal" design tokens
- * Filed: 2026-07-05 by ELEVIN (Build Track C, Phase 4)
- * Authority: SEVIN directive TRACK-C-P4-WEBUI-BUILD-20260705
+ * phase4-tokens.css — Phase 4 v4 "Workshop" design tokens
+ * Reworked: 2026-08-03 by ELEVIN
+ * Activated: 2026-08-03 by NAVIGATOR
+ * Rework authority: 20260803-102335-DIRECTIVE-P1-WEBUI-V4-TOKENS-AND-FEED-MANIFEST
+ * Activation authority: 20260803-231100-DIRECTIVE-P1-WEBUI-V4-TARGETED-REWORK
  *
- * Replaces pass3-tokens.css with the muted professional ops-console palette.
- * Reference: 05-PHASE-4-WEBUI-REDESIGN-SPEC.md §2 Design System
+ * Supersedes Pass 3 values with the ratified Workshop material-and-light palette.
+ * Reference: 05-PHASE-4-WEBUI-REDESIGN-SPEC.md v4 §2 + §13.1
  *
- * Installation:
- *   1. Import this file AFTER pass3-tokens.css in pages.css (or replace)
- *   2. Comment out or remove pass3-tokens.css import
- *   3. The new vars shadow the old ones — UI components using var(--bg-card)
- *      etc. pick up the new values automatically.
+ * Live import surface: src/main.jsx imports ./phase4-tokens.css directly.
+ * Legacy compatibility variables are defined in this file's P3 shim section;
+ * theme/pass3-tokens.css is not part of the live root import chain.
  */
 
 /* ── Fonts ──────────────────────────────────────────────────────── */
@@ -59,73 +59,89 @@
 /* ── Root tokens ────────────────────────────────────────────────── */
 :root {
   /* --- Backgrounds --- */
-  --bg-void:        #0B0E13;  /* App background — near-black, slight blue */
-  --bg-surface:     #12161D;  /* Cards, panels */
-  --bg-raised:      #1A1F28;  /* Raised elements, headers, modals */
-  --bg-inset:       #0E1217;  /* Wells, inputs, code blocks */
-  --bg-overlay:     rgba(0, 0, 0, 0.55); /* Modal backdrops */
+  --bg-void:        #0B0906;  /* Workshop floor — warm near-black */
+  --bg-surface:     #151009;  /* Oiled wood / primary panels */
+  --bg-raised:      #241B12;  /* Lit work surfaces */
+  --bg-inset:       #0E0B08;  /* Wells, inputs, code blocks */
+  --bg-overlay:     rgba(5, 4, 3, 0.72); /* Modal backdrops */
+
+  /* --- Workshop materials + light --- */
+  --material-wood:       linear-gradient(145deg, #2D1E12, #1A140D);
+  --material-surface:    linear-gradient(155deg, #241B12, #151009);
+  --material-inset:      linear-gradient(180deg, #120E09, #0B0906);
+  --light-warm:          rgba(232, 180, 92, 0.16);
+  --light-cool:          rgba(127, 196, 201, 0.12);
+  --route-amber:         #E8B45C;
+  --route-amber-trail:   rgba(232, 180, 92, 0.30);
 
   /* --- Borders --- */
-  --border-hair:    #232A34;  /* 1px separators */
-  --border-strong:  #2E3743;  /* Card outlines, focus rings base */
-  --border-accent:  #5B8DEF;  /* Active/focus border (accent) */
+  --border-hair:    rgba(237, 228, 214, 0.13); /* Quiet separators */
+  --border-strong:  rgba(232, 180, 92, 0.28);  /* Lit material edge */
+  --border-accent:  #E8B45C;                  /* Active/focus edge */
 
   /* --- Text --- */
-  --text-primary:   #E6EAF0;  /* Not pure white — reduces glare on dark */
-  --text-secondary: #9BA6B4;  /* Labels, captions */
-  --text-tertiary:  #5D6875;  /* Disabled, hints */
-  --text-inverse:   #0B0E13;  /* Text on accent/pale backgrounds */
+  --text-primary:   #EDE4D6;  /* Warm parchment */
+  --text-secondary: #9E907B;  /* Labels, captions — approved Workshop proof */
+  --text-tertiary:  #A0927C;  /* Disabled/hints; >= 4.5:1 on declared solid backgrounds */
+  --text-inverse:   #0B0906;  /* Text on amber/cool backgrounds */
 
-  /* --- Accent (THE single accent) --- */
-  --accent:         #5B8DEF;  /* Calm desaturated blue — primary accent */
-  --accent-dim:     #3A5B9E;  /* Hover/pressed states */
-  --accent-subtle:  rgba(91, 141, 239, 0.12);  /* Ghost backgrounds */
+  /* --- Work accent: the amber route, Workshop canon's signature --- */
+  --accent:         #E8B45C;
+  --accent-dim:     #D9793F;
+  --accent-subtle:  rgba(232, 180, 92, 0.12);
 
   /* --- Semantic colors — used ONLY for meaning, never decorative --- */
-  --pos:            #4CAF7D;  /* Gains, healthy, up — muted green */
-  --pos-dim:        rgba(76, 175, 125, 0.15);
-  --neg:            #E0685F;  /* Losses, errors, down — muted coral */
-  --neg-dim:        rgba(224, 104, 95, 0.15);
-  --warn:           #D4A24E;  /* Attention, pending — muted amber */
-  --warn-dim:       rgba(212, 162, 78, 0.15);
-  --idle:           #6B7684;  /* Sleeping/waiting — grey */
+  --pos:            #8FD9A0;  /* Gains, healthy, complete */
+  --pos-dim:        rgba(143, 217, 160, 0.15);
+  --neg:            #E0705F;  /* Losses, errors, active escalation */
+  --neg-dim:        rgba(224, 112, 95, 0.15);
+  --warn:           #E8B45C;  /* Work/attention amber */
+  --warn-dim:       rgba(232, 180, 92, 0.15);
+  --idle:           #766B59;  /* Legitimately unlit; aligned to accessible idle state */
 
-  /* --- Agent categorical accents (13 agents) --- */
+  /* --- Agent categorical accents (14 agents) --- */
   /* Used sparingly — agent dots and badges only. NOT for surfaces. */
-  --cat-sevin:      #5B8DEF;  /* SEVIN — uses the accent blue */
-  --cat-overseer:   #4CAF7D;  /* OVERSEER — pos green (steward of execution) */
-  --cat-elevin:     #7C8DA6;  /* ELEVIN — muted steel (engineering) */
-  --cat-tika:       #9BA6B4;  /* TIKA — text-secondary grey (scholar) */
-  --cat-quant:      #D4A24E;  /* QUANT — warn amber (trading) */
-  --cat-nexus:      #5D6875;  /* NEXUS — text-tertiary (synthesis, background) */
-  --cat-comms:      #6B7684;  /* COMMS — idle grey (operator) */
-  --cat-axis:       #A8B2C0;  /* AXIS — light grey (aide) */
-  --cat-cosmos:     #E0685F;  /* COSMOS — neg coral (art/creative) */
-  --cat-navigator:  #4CAF7D;  /* NAVIGATOR — pos green (guidance) */
-  --cat-stan-local: #7C8DA6;  /* STAN-LOCAL — muted steel (auditor) */
-  --cat-stan-hl:    #5D6875;  /* STAN-HL — tertiary grey (hardline) */
-  --cat-vault:      #9BA6B4;  /* VAULT — secondary grey (keeper) */
-  --cat-sage:       #D4A24E;  /* SAGE — warn amber (wisdom) */
+  --cat-sevin:      #EDBD70;
+  --cat-overseer:   #DE8650;
+  --cat-elevin:     #8ACDD1;
+  --cat-tika:       #A99A83;
+  --cat-quant:      #F0C47E;
+  --cat-nexus:      #65979B;
+  --cat-comms:      #DB9E6D;
+  --cat-axis:       #D0C2AA;
+  --cat-cosmos:     #E28B56;
+  --cat-navigator:  #91D4D8;
+  --cat-stan-local: #8D82A0;
+  --cat-stan-hl:    #6D637C;
+  --cat-vault:      #8A806F; /* Sealed/unconnected agent identity; status-disjoint */
+  --cat-sage:       #F2CB89;
 
-  /* --- Status dots (universal vocabulary) --- */
-  --status-active:      #4CAF7D;  /* pos — thinking, building */
-  --status-pending:     #D4A24E;  /* warn — waiting, queued */
-  --status-blocked:     #E0685F;  /* neg — blocked, error */
-  --status-idle:        #6B7684;  /* idle — sleeping, idle */
-  --status-airgap:      #5B8DEF;  /* accent — air-gapped agent */
-  --status-offline:     #5D6875;  /* tertiary — disconnected */
-  --status-live:        #E0685F;  /* neg (alert) — LIVE trading mode */
-  --status-paper:       #6B7684;  /* idle — PAPER trading mode */
+  /* --- Status vocabulary (v4 §2; meaning, never decoration) --- */
+  --status-work-inflight: #E8B45C; /* Amber in motion */
+  --status-work-assigned: #D9793F; /* Ember steady / station lit */
+  --status-idle:          #766B59; /* Unlit, legitimate idle; >= 3:1 on raised */
+  --status-degraded:      #E0705F; /* Haze/storm/escalation */
+  --status-unknown:       #7FC4C9; /* Unreadable; distinct from idle and zero */
+  --status-vault:         #7F7565; /* Sealed, unlit and unconnected */
+
+  /* Existing component vocabulary mapped to the named states above. */
+  --status-active:      #E8B45C;
+  --status-pending:     #D9793F;
+  --status-blocked:     #E0705F;
+  --status-airgap:      #7F7565;
+  --status-offline:     #766B59;
+  --status-live:        #8FD9A0;
+  --status-paper:       #7FC4C9;
 
   /* --- Gamification (scoped to AI City ONLY) --- */
-  --xp-glow:        #D4A24E;
-  --level-up:       #4CAF7D;
-  --achievement:    #D4A24E;
-  --mission-active: #5B8DEF;
-  --mission-done:   #4CAF7D;
+  --xp-glow:        #E8B45C;
+  --level-up:       #8FD9A0;
+  --achievement:    #D9793F;
+  --mission-active: #E8B45C;
+  --mission-done:   #8FD9A0;
 
   /* --- Typography --- */
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
   --font-body:    'Inter', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 
@@ -157,10 +173,27 @@
   --space-grid:     8px;    /* 8px spacing grid */
   --space-gap:      16px;   /* Standard gap = 2 grid units */
 
-  /* --- Shadows (minimal — hairline borders preferred) --- */
-  --shadow-card:    0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-elev:    0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-modal:   0 8px 32px rgba(0, 0, 0, 0.5);
+  /* --- Board mode: designed reduced-motion / low-power density (§13.1) --- */
+  --board-bg:              #0E0B08;
+  --board-surface:         #1A140D;
+  --board-raised:          #241B12;
+  --board-border:          rgba(237, 228, 214, 0.16);
+  --board-text:            #EDE4D6;
+  --board-text-muted:      #9E907B;
+  --board-accent:          #E8B45C;
+  --board-event-line:      #7FC4C9;
+  --board-event-line-bg:   rgba(127, 196, 201, 0.10);
+  --board-space-grid:      6px;
+  --board-space-gap:       10px;
+  --board-card-padding:    12px;
+  --board-row-height:      36px;
+  --board-world-opacity:   0;
+  --board-motion-duration: 0ms;
+
+  /* --- Elevation via material light falloff, not generic drop shadows --- */
+  --shadow-card:    inset 0 1px 0 rgba(232, 180, 92, 0.06);
+  --shadow-elev:    inset 0 1px 0 rgba(237, 228, 214, 0.05), 0 0 36px rgba(232, 180, 92, 0.06);
+  --shadow-modal:   inset 0 1px 0 rgba(237, 228, 214, 0.06), 0 0 80px rgba(127, 196, 201, 0.08);
 }
 
 /* ── P3 backward compatibility shims ────────────────────────────── */
@@ -173,18 +206,18 @@
   --bg-card-2:      var(--bg-raised);
   --bg-card-elev:   var(--bg-raised);
   --border-subtle:  var(--border-hair);
-  --border-strong:  var(--border-strong);
-  --text-primary:   var(--text-primary);
-  --text-secondary: var(--text-secondary);
+  --border-strong:  rgba(232, 180, 92, 0.28);
+  --text-primary:   #EDE4D6;
+  --text-secondary: #9E907B;
   --text-muted:     var(--text-tertiary);
-  --status-active:  var(--status-active);
-  --status-pending: var(--status-pending);
-  --status-blocked: var(--status-blocked);
+  --status-active:  #E8B45C;
+  --status-pending: #D9793F;
+  --status-blocked: #E0705F;
   --status-done:    var(--idle);
   --status-hold:    var(--idle);
   --status-dead:    var(--status-offline);
-  --font-body:      var(--font-body);
-  --font-display:   var(--font-display);
-  --font-mono:      var(--font-mono);
-  --radius-card:    var(--radius-card);
+  --font-body:      'Inter', system-ui, sans-serif;
+  --font-display:   Georgia, 'Times New Roman', serif;
+  --font-mono:      'JetBrains Mono', ui-monospace, monospace;
+  --radius-card:    10px;
 }
