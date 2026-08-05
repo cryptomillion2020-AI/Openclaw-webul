@@ -1,0 +1,388 @@
+/**
+ * workshop-room.css — the shared Workshop room, generalised.
+ *
+ * Authority: Architect approval 2026-08-04 of the Bridge Workshop emulation.
+ * The Bridge proved the language; this file makes it reusable so Markets,
+ * Network, Lab and Vault are the same building rather than six lookalikes.
+ *
+ * Bridge is deliberately NOT migrated onto this file yet. It is approved work
+ * and mid-flight refactors of approved surfaces are how approvals get lost;
+ * it migrates once every page is approved and the language has stopped moving.
+ *
+ * Standing data rule, unchanged and binding: material is applied to the ROOM.
+ * It never touches a value. An empty feed renders empty and says why.
+ */
+
+.wsroom {
+  --stone:      #1C1710;
+  --stone-lit:  #2A2116;
+  --stone-dark: #100C08;
+  --brass:      #B89555;
+  --glass-teal: rgba(116, 199, 195, 0.13);
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0A0806;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.wsroom-env { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.wsroom > *:not(.wsroom-env) { position: relative; z-index: 1; }
+
+/* Back wall — vertical timber panelling. */
+.wsroom-wall {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.34) 0px, rgba(0,0,0,0.34) 2px,
+      transparent 2px, transparent 168px),
+    linear-gradient(180deg, #17110B 0%, #120D09 46%, #0C0906 100%);
+}
+
+.wsroom-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 30%,
+    transparent 0%, rgba(6,4,3,0.42) 62%, rgba(6,4,3,0.86) 100%);
+}
+
+/* The aperture — wall thickness carried on the opening itself. */
+.wsroom-window {
+  position: absolute;
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+  width: 1240px; height: 400px;
+  border-radius: 50% 50% 0 0 / 34% 34% 0 0;
+  overflow: hidden;
+  border: 15px solid var(--stone);
+  border-bottom: 0;
+  box-shadow:
+    inset 0 0 0 2px rgba(184,149,85,0.42),
+    inset 0 20px 44px rgba(0,0,0,0.62),
+    0 0 0 2px rgba(0,0,0,0.9),
+    0 0 46px 12px rgba(0,0,0,0.72);
+}
+
+.wsroom-window img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: saturate(1.02) contrast(1.06) brightness(1.0);
+}
+
+.wsroom-window::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(8,6,4,0.40) 0%, rgba(8,6,4,0) 26%,
+      rgba(8,6,4,0.24) 60%, rgba(10,8,6,0.90) 90%, #0A0806 100%),
+    radial-gradient(78% 94% at 50% 58%, transparent 42%, rgba(10,8,6,0.72) 100%);
+}
+
+/* Keystone. */
+.wsroom-keystone {
+  position: absolute;
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+  width: 86px; height: 46px;
+  background: linear-gradient(180deg, var(--stone-lit) 0%, var(--stone) 60%, var(--stone-dark) 100%);
+  box-shadow: inset 0 1px 0 rgba(232,180,92,0.34), 0 6px 18px rgba(0,0,0,0.8);
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+}
+
+/* Floor + lamp. */
+.wsroom-floor {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  top: 360px;
+  background:
+    linear-gradient(180deg, rgba(232,180,92,0.15) 0%, rgba(232,180,92,0.05) 26%, transparent 58%),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 2px,
+      transparent 2px, transparent 132px),
+    linear-gradient(180deg, #2A1C11 0%, #1A120C 40%, #0C0906 100%);
+  box-shadow: inset 0 2px 0 rgba(184,149,85,0.26);
+}
+
+.wsroom-lamp {
+  position: absolute; left: 0; right: 0; top: 330px; height: 620px;
+  background: radial-gradient(58% 62% at 50% 0%,
+    rgba(232,180,92,0.15) 0%, rgba(232,180,92,0.05) 44%, transparent 74%);
+}
+
+/* ── Masthead ───────────────────────────────────────────────────── */
+.wsroom-masthead {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 224px 48px 24px;
+}
+
+.wsroom-masthead::before {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 0; height: 250px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(10,8,6,0.72) 46%, rgba(10,8,6,0.94) 100%),
+    linear-gradient(90deg, rgba(10,8,6,0.92) 0%, rgba(10,8,6,0.30) 34%,
+                           rgba(10,8,6,0.30) 66%, rgba(10,8,6,0.92) 100%);
+}
+
+.wsroom-masthead > * { position: relative; z-index: 1; }
+
+.wsroom-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+
+.wsroom-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 52px;
+  line-height: 1.0;
+  letter-spacing: -0.015em;
+  color: #F2EADC;
+  margin: 0;
+  text-shadow: 0 2px 26px rgba(0,0,0,0.9), 0 0 60px rgba(232,180,92,0.14);
+}
+
+.wsroom-standing { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+
+.wsroom-standing-value {
+  font-size: 40px; line-height: 1;
+  color: var(--route-amber);
+  text-shadow: 0 0 34px rgba(232,180,92,0.55);
+}
+
+.wsroom-standing-value.is-held { color: #E0705F; text-shadow: 0 0 34px rgba(224,112,95,0.45); }
+
+.wsroom-standing-label {
+  font-size: var(--size-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+/* ── Instrument strip (feed rail) ───────────────────────────────── */
+.wsroom-rail {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 48px;
+  padding: 0 18px;
+  border: 1px solid rgba(184,149,85,0.26);
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(38,26,16,0.88), rgba(16,12,8,0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(232,180,92,0.20),
+    inset 0 -10px 24px rgba(0,0,0,0.55),
+    0 10px 26px rgba(0,0,0,0.55);
+}
+
+.wsroom-rail-item {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 11px 22px 11px 0;
+  margin-right: 22px;
+  border-right: 1px solid rgba(184,149,85,0.20);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+}
+
+.wsroom-rail-item:last-child { border-right: 0; margin-right: 0; }
+.wsroom-rail-dot { width: 6px; height: 6px; flex: none; background: var(--status-idle); }
+.wsroom-rail-item[data-state="LIVE"]    .wsroom-rail-dot { background: var(--status-live); }
+.wsroom-rail-item[data-state="STALE"]   .wsroom-rail-dot { background: var(--status-work-assigned); }
+.wsroom-rail-item[data-state="DEAD"]    .wsroom-rail-dot { background: var(--status-degraded); }
+.wsroom-rail-item[data-state="NO_SOURCE"] .wsroom-rail-dot { background: var(--status-unknown); }
+
+.wsroom-rail-name {
+  color: var(--text-secondary);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: var(--size-micro);
+}
+.wsroom-rail-state { color: var(--text-primary); }
+.wsroom-rail-item[data-state="DEAD"]  .wsroom-rail-state { color: var(--status-degraded); }
+.wsroom-rail-item[data-state="STALE"] .wsroom-rail-state { color: var(--status-work-assigned); }
+.wsroom-rail-item[data-state="NO_SOURCE"] .wsroom-rail-state { color: var(--status-unknown); }
+.wsroom-rail-age { color: var(--text-tertiary); font-size: var(--size-micro); }
+
+/* ── Stations ───────────────────────────────────────────────────── */
+.wsroom-stations {
+  flex: 1;
+  display: grid;
+  gap: 26px;
+  padding: 34px 48px 20px;
+  grid-template-columns: repeat(2, 1fr);
+  align-content: start;
+}
+
+.wsroom-station {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 26px 26px;
+  border-radius: 3px;
+  min-width: 0;
+  background: linear-gradient(180deg,
+    rgba(58,40,24,0.92) 0%, rgba(36,25,15,0.94) 34%, rgba(18,13,9,0.96) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(232,180,92,0.34),
+    0 0 0 1px rgba(184,149,85,0.22),
+    0 0 0 9px var(--stone),
+    0 0 0 10px rgba(0,0,0,0.72),
+    0 22px 46px rgba(0,0,0,0.62);
+}
+
+.wsroom-station--wide { grid-column: 1 / -1; }
+
+.wsroom-station::before {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 0; height: 150px;
+  border-radius: 3px 3px 0 0;
+  background: radial-gradient(70% 100% at 30% 0%, rgba(232,180,92,0.13), transparent 72%);
+  pointer-events: none;
+}
+
+.wsroom-station::after {
+  content: '';
+  position: absolute; right: 10px; bottom: 10px;
+  width: 16px; height: 16px;
+  border-right: 2px solid rgba(184,149,85,0.44);
+  border-bottom: 2px solid rgba(184,149,85,0.44);
+  pointer-events: none;
+}
+
+.wsroom-station > * { position: relative; z-index: 2; }
+
+.wsroom-station-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(184,149,85,0.28);
+  margin-bottom: 14px;
+}
+
+.wsroom-station-title {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #D9B778;
+  text-shadow: 0 0 18px rgba(232,180,92,0.30);
+}
+
+.wsroom-station-count {
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  color: var(--text-secondary);
+}
+
+/* The cool station — glazed case. One per page at most. */
+.wsroom-station--glass {
+  background: linear-gradient(180deg,
+    rgba(30,40,40,0.62) 0%, rgba(20,26,27,0.80) 40%, rgba(14,14,13,0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(116,199,195,0.30),
+    0 0 0 1px rgba(116,199,195,0.20),
+    0 0 0 9px var(--stone),
+    0 0 0 10px rgba(0,0,0,0.72),
+    0 22px 46px rgba(0,0,0,0.62);
+}
+
+.wsroom-station--glass::before {
+  background: radial-gradient(70% 100% at 50% 0%, var(--glass-teal), transparent 74%);
+}
+.wsroom-station--glass .wsroom-station-title {
+  color: #9FD4D1; text-shadow: 0 0 18px rgba(116,199,195,0.32);
+}
+.wsroom-station--glass .wsroom-station-head { border-bottom-color: rgba(116,199,195,0.28); }
+
+/* ── Rows ───────────────────────────────────────────────────────── */
+.wsroom-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(237,228,214,0.10);
+  font-size: var(--size-label);
+}
+.wsroom-row:last-child { border-bottom: 0; }
+
+.wsroom-row-mark { width: 6px; height: 6px; align-self: center; background: var(--status-idle); }
+.wsroom-row[data-state="pass"]    .wsroom-row-mark { background: var(--pos); }
+.wsroom-row[data-state="fail"]    .wsroom-row-mark { background: var(--status-degraded); }
+.wsroom-row[data-state="active"]  .wsroom-row-mark { background: var(--status-work-inflight); }
+.wsroom-row[data-state="unknown"] .wsroom-row-mark { background: var(--status-unknown); }
+
+.wsroom-row-name { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wsroom-row-meta {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.wsroom-row[data-state="fail"] .wsroom-row-meta { color: var(--status-degraded); }
+.wsroom-row[data-state="pass"] .wsroom-row-meta { color: var(--pos); }
+
+/* Quote grid — mono figures, right-aligned, never colourised for decoration. */
+.wsroom-quotes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; }
+
+.wsroom-quote {
+  padding: 12px 14px 12px 0;
+  border-right: 1px solid rgba(237,228,214,0.10);
+  font-family: var(--font-mono);
+}
+.wsroom-quote:last-child { border-right: 0; }
+.wsroom-quote-sym { font-size: var(--size-micro); letter-spacing: 0.14em; color: var(--text-secondary); }
+.wsroom-quote-px  { font-size: 22px; color: var(--text-primary); margin-top: 6px; }
+.wsroom-quote-chg { font-size: var(--size-micro); margin-top: 4px; color: var(--text-tertiary); }
+.wsroom-quote-chg.up   { color: var(--pos); }
+.wsroom-quote-chg.down { color: var(--neg); }
+
+/* ── Empty — honest, never filled with substitutes ──────────────── */
+.wsroom-empty {
+  padding: 16px 0 6px;
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+.wsroom-empty strong {
+  display: block;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: var(--size-micro);
+  margin-bottom: 8px;
+}
+
+.wsroom-colophon {
+  border-top: 1px solid rgba(184,149,85,0.26);
+  padding: 16px 48px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8E8168;
+}
+
+@media (max-width: 1100px) {
+  .wsroom-stations { grid-template-columns: 1fr; padding: 24px 20px 16px; }
+  .wsroom-masthead { padding-top: 170px; }
+  .wsroom-title { font-size: 34px; }
+  .wsroom-quotes { grid-template-columns: repeat(2, 1fr); }
+}
