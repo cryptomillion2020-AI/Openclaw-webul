@@ -8,3 +8,19 @@ dist/
 # only, never the value.
 .env.local
 .env.*.local
+
+# Phase 4 consolidation (SEVIN 2026-08-04): editor/agent debris must never
+# enter history. Snapshots live in git, not in *.bak siblings.
+*.bak
+*.bak[0-9]
+*.bak.*
+*.pre-*.bak
+*.snap.*
+*.deb
+test-results/
+evidence/
+design-samples/
+public/sounds/preview/
+p412.mjs
+*.deferred-*
+*.pre-*
