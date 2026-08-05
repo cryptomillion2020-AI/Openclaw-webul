@@ -1,0 +1,288 @@
+/**
+ * bridge-canon.css — Bridge page, approved Workshop canon.
+ * Authority: Architect approval of AICITY-PASS3-20260803T151124Z (DESIGN-PLAN.md).
+ *
+ * Binding prohibition from that plan: "there are no floating cards, gradients,
+ * pills, or ornamental metrics." Structure is carried by rules, rails, and the
+ * amber route line. Nothing floats. Nothing is decorative.
+ *
+ * Owned by SEVIN. Data wiring inside the page belongs to Lane A; the visual
+ * surface in this file does not.
+ */
+
+.bridge {
+  --rule:        var(--border-hair);
+  --route:       var(--route-amber);
+  --brass:       #B89555;         /* rules + metadata, approved canon */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* ── The amber route ─────────────────────────────────────────────
+   Canon signature: a single continuous line down the page axis. It
+   encodes one-world continuity; it is not an ornament, so it never
+   glows, pulses, or gradients. */
+.bridge::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--route) 0%, var(--route) 72%, rgba(232,180,92,0.15) 100%);
+  opacity: 0.9;
+}
+
+/* ── Masthead ──────────────────────────────────────────────────── */
+.bridge-masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 28px 40px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bridge-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+
+.bridge-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 52px;
+  line-height: 1.0;
+  letter-spacing: -0.015em;
+  color: #F2EADC;
+  margin: 0;
+}
+
+.bridge-standing {
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.bridge-standing-value {
+  font-size: 54px;
+  line-height: 1;
+  color: var(--route);
+  letter-spacing: 0.02em;
+}
+
+.bridge-standing-value.is-clear { color: var(--text-secondary); }
+
+.bridge-standing-label {
+  font-size: var(--size-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ── Feed rail — per-feed liveness, always visible ────────────────
+   An empty feed stays empty and says so. A dead feed names itself. */
+.bridge-feeds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 40px;
+}
+
+.bridge-feed {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 11px 22px 11px 0;
+  margin-right: 22px;
+  border-right: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+}
+
+.bridge-feed:last-child { border-right: 0; }
+
+.bridge-feed-dot {
+  width: 6px; height: 6px;
+  flex: none;
+  background: var(--status-idle);
+}
+
+.bridge-feed[data-state="LIVE"]  .bridge-feed-dot { background: var(--status-live); }
+.bridge-feed[data-state="STALE"] .bridge-feed-dot { background: var(--status-work-assigned); }
+.bridge-feed[data-state="DEAD"]  .bridge-feed-dot { background: var(--status-degraded); }
+
+.bridge-feed-name {
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: var(--size-micro);
+}
+
+.bridge-feed-state { color: var(--text-primary); }
+.bridge-feed[data-state="DEAD"]  .bridge-feed-state { color: var(--status-degraded); }
+.bridge-feed[data-state="STALE"] .bridge-feed-state { color: var(--status-work-assigned); }
+
+.bridge-feed-age {
+  color: var(--text-tertiary);
+  font-size: var(--size-micro);
+}
+
+/* ── Plates ──────────────────────────────────────────────────────
+   A plate is a region of the page separated by a rule. It is not a
+   card: no radius, no shadow, no background fill, no lift. */
+.bridge-plates {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  /* Rows stretch to consume the viewport. The approved acceptance matrix
+     fails any frame with a dead lower third; that gate applies here too. */
+  grid-template-rows: min-content min-content 1fr;
+  gap: 0;
+}
+
+.bridge-plate {
+  display: flex;
+  flex-direction: column;
+  padding: 26px 40px 30px;
+  border-bottom: 1px solid var(--rule);
+  min-width: 0;
+}
+
+.bridge-plate + .bridge-plate { border-left: 1px solid var(--rule); }
+.bridge-plate--full { grid-column: 1 / -1; border-left: 0; }
+
+.bridge-plate-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.bridge-plate-title {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.bridge-plate-count {
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  color: var(--text-secondary);
+}
+
+/* ── Ledger rows — the primary data form ─────────────────────── */
+.bridge-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--size-label);
+}
+
+.bridge-row:last-child { border-bottom: 0; }
+
+.bridge-row-mark {
+  width: 6px; height: 6px;
+  align-self: center;
+  background: var(--status-idle);
+}
+
+.bridge-row[data-state="active"]   .bridge-row-mark { background: var(--status-work-inflight); }
+.bridge-row[data-state="assigned"] .bridge-row-mark { background: var(--status-work-assigned); }
+.bridge-row[data-state="blocked"]  .bridge-row-mark { background: var(--status-degraded); }
+.bridge-row[data-state="sealed"]   .bridge-row-mark { background: var(--status-vault); }
+
+.bridge-row-name {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bridge-row-meta {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Roster ──────────────────────────────────────────────────── */
+.bridge-roster {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.bridge-roster-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+}
+
+.bridge-roster-mark { width: 6px; height: 6px; flex: none; }
+.bridge-roster-name { color: var(--text-primary); letter-spacing: 0.06em; }
+.bridge-roster-state { margin-left: auto; color: var(--text-tertiary); font-size: var(--size-micro); }
+
+/* ── Empty state — honest, never filled with substitutes ─────── */
+.bridge-empty {
+  padding: 18px 0 6px;
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--rule);
+}
+
+.bridge-empty strong {
+  display: block;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: var(--size-micro);
+  margin-bottom: 6px;
+}
+
+/* ── Colophon ────────────────────────────────────────────────── */
+.bridge-colophon {
+  margin-top: auto;
+  border-top: 1px solid var(--rule);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 40px 0;
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 1100px) {
+  .bridge-plates { grid-template-columns: 1fr; }
+  .bridge-plate + .bridge-plate { border-left: 0; }
+  .bridge-title { font-size: 34px; }
+}

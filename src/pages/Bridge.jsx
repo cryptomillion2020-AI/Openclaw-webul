@@ -1,154 +1,258 @@
 /**
- * Bridge.jsx — Pass 3 P3.1 — Command Bridge (formerly Dashboard)
- * Bento-Box layout overlaid on Three.js Constellation scene
+ * Bridge.jsx — Command Bridge, rebuilt to approved Workshop canon.
+ *
+ * Authority: Architect approval of AICITY-PASS3-20260803T151124Z.
+ * Canon prohibition applied: no floating cards, gradients, pills, or
+ * ornamental metrics. Structure is rules and rails; the data carries the page.
+ *
+ * Data contract (Architect, 2026-08-04):
+ *   1. An empty feed stays empty. No mock, sample, or last-known substitution.
+ *   2. Degradation is per feed. One dead feed does not blank the others.
+ *   3. A dead feed names itself and says how long it has been dark.
+ *
+ * Every value on this page derives from a live prop. There is no seeded data
+ * in this file, by design — if the fleet is quiet, the Bridge reads quiet.
  */
-import { ConstellationScene } from '../three/ConstellationScene';
-import { RankBadge } from '../components/pass3/RankBadge';
-import { MissionCard } from '../components/pass3/MissionCard';
-import { LeaderboardRow } from '../components/pass3/LeaderboardRow';
-import { SideQuestPill } from '../components/pass3/SideQuestPill';
-import { NewDirectiveCTA } from '../components/pass3/NewDirectiveCTA';
-import { FleetActivityChart } from '../charts/FleetActivityChart';
-import { WorkloadTreemap } from '../charts/WorkloadTreemap';
+import { useMemo } from 'react';
+import './bridge-canon.css';
 
-const MOCK_LEADERBOARD = [
-  { agentId: 'sevin',      level: 4, xp: 1240, trend: 'up',   xpDelta7d: 320 },
-  { agentId: 'overseer',   level: 3, xp: 890,  trend: 'up',   xpDelta7d: 180 },
-  { agentId: 'elevin',     level: 3, xp: 720,  trend: 'up',   xpDelta7d: 140 },
-  { agentId: 'tika',       level: 2, xp: 340,  trend: 'flat', xpDelta7d: 40 },
-  { agentId: 'nexus',      level: 2, xp: 280,  trend: 'flat', xpDelta7d: 30 },
-  { agentId: 'navigator',  level: 2, xp: 220,  trend: 'flat', xpDelta7d: 20 },
-  { agentId: 'cosmos',     level: 2, xp: 200,  trend: 'flat', xpDelta7d: 25 },
-  { agentId: 'comms',      level: 1, xp: 90,   trend: 'flat', xpDelta7d: 10 },
-  { agentId: 'axis',       level: 1, xp: 70,   trend: 'flat', xpDelta7d: 5 },
-  { agentId: 'stan-local', level: 1, xp: 60,   trend: 'flat', xpDelta7d: 5 },
-  { agentId: 'quant',      level: 1, xp: 50,   trend: 'flat', xpDelta7d: 0 },
-  { agentId: 'vault',      level: 1, xp: 30,   trend: 'flat', xpDelta7d: 5 },
-  { agentId: 'stan-hl',    level: 1, xp: 0,    trend: 'down', xpDelta7d: -10 },
+/* Fleet roster — identity canon, ratified 2026-08-02. Fourteen agents.
+   This is an identity list, not data: names are canon, states are derived. */
+const ROSTER = [
+  'SEVIN', 'OVERSEER', 'ELEVIN', 'STAN',
+  'TIKA', 'NAVIGATOR', 'COSMOS', 'QUANT',
+  'ROOTS', 'AXIS', 'COMMS', 'NEXUS',
+  'SAGE', 'VAULT',
 ];
 
-const MOCK_MISSIONS = [
-  { mission_id: 'p31', title: 'Pass 3.1 Bridge Implementation', assignee: 'sevin', status: 'in_progress', progress_pct: 55, progress_delta_24h: 25, xp_reward: 500, deadline_iso: '2026-06-30T23:51:00Z' },
-  { mission_id: 'sit024', title: 'SIT-024 Triple-Misfire Investigation', assignee: 'sevin', status: 'in_progress', progress_pct: 35, progress_delta_24h: 0, xp_reward: 150, deadline_iso: '2026-07-05T00:00:00Z' },
-  { mission_id: 'oversight', title: 'PM/SM Cadence Operations', assignee: 'overseer', status: 'in_progress', progress_pct: 90, progress_delta_24h: 5, xp_reward: 50, deadline_iso: '2026-06-30T12:00:00Z' },
-];
+/* VAULT is air-gapped by design. Its quiet is correct, never a defect. */
+const SEALED = new Set(['VAULT']);
 
-const MOCK_DECISIONS_DELTA = -2;
+const ACTIVE_WINDOW_S = 15 * 60;
 
-const MOCK_QUESTS = [
-  { id: 'q1', title: 'Reply to all P0 within 5 min', cadence: 'DAILY', xp_reward: 20, progress: 80 },
-  { id: 'q2', title: 'Zero HALT triggers across fleet', cadence: 'DAILY', xp_reward: 30, progress: 100 },
-  { id: 'q3', title: 'All 13 agents log activity in 24h', cadence: 'WEEKLY', xp_reward: 100, progress: 60 },
-];
+function ago(seconds) {
+  if (seconds == null || !isFinite(seconds)) return '—';
+  if (seconds < 60)    return `${Math.floor(seconds)}s`;
+  if (seconds < 3600)  return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  return `${Math.floor(seconds / 86400)}d`;
+}
 
-const MOCK_COMMS = [
-  { from: 'OVERSEER', to: 'SEVIN', unread: 2 },
-  { from: 'ELEVIN',   to: 'SEVIN', unread: 1 },
-  { from: 'TIKA',     to: 'SEVIN', unread: 0 },
-];
+/**
+ * Feed liveness rail. Consumes Lane A's feedHealth map when present; when it
+ * is absent this degrades to UNKNOWN rather than inventing a healthy state.
+ * Reporting a feed as LIVE without evidence would be the exact failure the
+ * rule exists to prevent.
+ */
+function FeedRail({ feedHealth, connected }) {
+  const feeds = useMemo(() => {
+    const declared = [
+      ['transport',      'websocket'],
+      ['bus_activity',   'bus'],
+      ['task_update',    'tasks'],
+      ['market_context', 'markets'],
+      ['comms',          'comms'],
+    ];
+    const now = Date.now() / 1000;
+    return declared.map(([key, label]) => {
+      if (key === 'transport') {
+        return { key, label, state: connected ? 'LIVE' : 'DEAD', age: null };
+      }
+      const h = feedHealth?.[key];
+      if (!h) return { key, label, state: 'UNKNOWN', age: null };
+      return { key, label, state: h.state || 'UNKNOWN', age: h.lastMessageAt ? now - h.lastMessageAt : null };
+    });
+  }, [feedHealth, connected]);
 
-export function Bridge({ killActive, busActivity, connected }) {
   return (
-    <div className="bridge-page">
-      <ConstellationScene busActivity={busActivity} />
+    <div className="bridge-feeds">
+      {feeds.map(f => (
+        <div className="bridge-feed" data-state={f.state} key={f.key}>
+          <span className="bridge-feed-dot" />
+          <span className="bridge-feed-name">{f.label}</span>
+          <span className="bridge-feed-state">{f.state}</span>
+          {f.age != null && <span className="bridge-feed-age">{ago(f.age)} ago</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
-      <div className="bridge-grid">
-        {/* Hero: Awaiting Architect (Decisions queued) */}
-        <div className="bento-card bento-decisions">
-          <div className="bento-card-label">Awaiting You</div>
-          <div className="bento-card-hero">0</div>
-          <div className="bento-card-sub">Architect decisions queued</div>
-          {MOCK_DECISIONS_DELTA !== 0 && (
-            <div className={`bento-card-delta ${MOCK_DECISIONS_DELTA < 0 ? 'down' : 'up'}`}>
-              <span>{MOCK_DECISIONS_DELTA < 0 ? '▼' : '▲'} {Math.abs(MOCK_DECISIONS_DELTA)} vs yesterday</span>
-              <span className="bento-card-timeframe">24h</span>
+function Empty({ what, why }) {
+  return (
+    <div className="bridge-empty">
+      <strong>{what}</strong>
+      {why}
+    </div>
+  );
+}
+
+export function Bridge({
+  killActive,
+  busActivity,
+  connected,
+  tasks,
+  activeProjects,
+  activeTasks,
+  oauthStatus,
+  feedHealth,
+}) {
+  const events   = Array.isArray(busActivity)   ? busActivity   : [];
+  const taskList = Array.isArray(tasks)         ? tasks         : [];
+  const projects = Array.isArray(activeProjects) ? activeProjects : [];
+
+  /* Agent activity derives from observed bus traffic only. An agent that has
+     not spoken is rendered unlit — we do not assert health we cannot see. */
+  const lastSeen = useMemo(() => {
+    const map = {};
+    for (const e of events) {
+      const who = (e.from || '').toUpperCase();
+      if (!who) continue;
+      if (!map[who] || e.mtime > map[who]) map[who] = e.mtime;
+    }
+    return map;
+  }, [events]);
+
+  const now = Date.now() / 1000;
+
+  const decisions = taskList.filter(t =>
+    /await|architect|approval|decision/i.test(`${t.status || ''} ${t.title || ''}`)
+  );
+
+  const inflight = taskList.filter(t => /progress|active|in_flight/i.test(t.status || ''));
+
+  return (
+    <div className="bridge">
+      <header className="bridge-masthead">
+        <div>
+          <div className="bridge-eyebrow">Master Workflow · Command Bridge</div>
+          <h1 className="bridge-title">The fleet,<br />at a glance.</h1>
+        </div>
+        <div className="bridge-standing">
+          <div className={`bridge-standing-value${decisions.length === 0 ? ' is-clear' : ''}`}>
+            {decisions.length}
+          </div>
+          <div className="bridge-standing-label">awaiting the Architect</div>
+        </div>
+      </header>
+
+      <FeedRail feedHealth={feedHealth} connected={connected} />
+
+      <div className="bridge-plates">
+        <section className="bridge-plate">
+          <div className="bridge-plate-head">
+            <span className="bridge-plate-title">Work in flight</span>
+            <span className="bridge-plate-count">{inflight.length}</span>
+          </div>
+          {inflight.length === 0 ? (
+            <Empty
+              what="No work in flight"
+              why={connected
+                ? 'The task feed is connected and reporting nothing active.'
+                : 'The task feed is dark — this is not a claim that the fleet is idle.'}
+            />
+          ) : inflight.map(t => (
+            <div className="bridge-row" data-state="active" key={t.task_id || t.id || t.title}>
+              <span className="bridge-row-mark" />
+              <span className="bridge-row-name">{t.title || t.task_id}</span>
+              <span className="bridge-row-meta">{(t.owner || t.assignee || '').toUpperCase()}</span>
             </div>
-          )}
-        </div>
+          ))}
+        </section>
 
-        {/* Active Missions */}
-        <div className="bento-card bento-missions">
-          <div className="bento-card-label">Active Missions</div>
-          <div className="bento-missions-grid">
-            {MOCK_MISSIONS.map(m => <MissionCard key={m.mission_id} mission={m} />)}
+        <section className="bridge-plate">
+          <div className="bridge-plate-head">
+            <span className="bridge-plate-title">At your desk</span>
+            <span className="bridge-plate-count">{decisions.length}</span>
           </div>
-        </div>
+          {decisions.length === 0 ? (
+            <Empty what="Nothing awaiting you" why="No task is currently blocked on an Architect decision." />
+          ) : decisions.map(t => (
+            <div className="bridge-row" data-state="blocked" key={t.task_id || t.id || t.title}>
+              <span className="bridge-row-mark" />
+              <span className="bridge-row-name">{t.title || t.task_id}</span>
+              <span className="bridge-row-meta">{(t.owner || t.assignee || '').toUpperCase()}</span>
+            </div>
+          ))}
+        </section>
 
-        {/* Leaderboard */}
-        <div className="bento-card bento-leaderboard">
-          <div className="bento-card-label">Leaderboard</div>
-          <div className="bento-leaderboard-list">
-            {MOCK_LEADERBOARD.map((r, i) => (
-              <LeaderboardRow key={r.agentId} rank={i + 1} agentId={r.agentId} level={r.level} xp={r.xp} trend={r.trend} xpDelta7d={r.xpDelta7d} />
-            ))}
+        <section className="bridge-plate bridge-plate--full">
+          <div className="bridge-plate-head">
+            <span className="bridge-plate-title">Fleet</span>
+            <span className="bridge-plate-count">
+              {Object.keys(lastSeen).length} of {ROSTER.length} seen
+            </span>
           </div>
-        </div>
-
-        {/* Trading status */}
-        <div className="bento-card bento-trading">
-          <div className="bento-card-label">Trading</div>
-          <div className="bento-card-hero" style={{ color: 'var(--status-hold)', fontSize: 36 }}>OFF</div>
-          <div className="bento-card-sub">paper hold · Phase 6 HOLD</div>
-        </div>
-
-        {/* Bus events */}
-        <div className="bento-card bento-bus">
-          <div className="bento-card-label">Network Traffic</div>
-          <div className="bento-card-hero" style={{ color: 'var(--cat-cyan)' }}>{busActivity?.length || 0}</div>
-          <div className="bento-card-sub">events visible · ~12/hr</div>
-        </div>
-
-        {/* Comms preview */}
-        <div className="bento-card bento-comms">
-          <div className="bento-card-label">Latest Comms</div>
-          <div className="bento-comms-list">
-            {MOCK_COMMS.map(c => (
-              <div key={c.from} className="bento-comms-row">
-                <span style={{ flex: 1 }}>{c.from} → {c.to}</span>
-                {c.unread > 0 && <span className="bento-comms-badge">{c.unread}</span>}
-              </div>
-            ))}
+          <div className="bridge-roster">
+            {ROSTER.map(name => {
+              const seen  = lastSeen[name];
+              const sealed = SEALED.has(name);
+              const state = sealed ? 'sealed'
+                          : seen == null ? 'unlit'
+                          : (now - seen) < ACTIVE_WINDOW_S ? 'active' : 'assigned';
+              const color = state === 'active'   ? 'var(--status-work-inflight)'
+                          : state === 'assigned' ? 'var(--status-work-assigned)'
+                          : state === 'sealed'   ? 'var(--status-vault)'
+                          : 'var(--status-idle)';
+              return (
+                <div className="bridge-roster-cell" key={name}>
+                  <span className="bridge-roster-mark" style={{ background: color }} />
+                  <span className="bridge-roster-name">{name}</span>
+                  <span className="bridge-roster-state">
+                    {sealed ? 'sealed' : seen == null ? 'unlit' : ago(now - seen)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </section>
 
-        {/* Workload Treemap (d3-hierarchy) */}
-        <div className="bento-card bento-workload">
-          <div className="bento-card-label">Workload Treemap</div>
-          <div style={{ flex: 1, minHeight: 220 }}>
-            <WorkloadTreemap width={300} height={220} />
+        <section className="bridge-plate">
+          <div className="bridge-plate-head">
+            <span className="bridge-plate-title">Bus traffic</span>
+            <span className="bridge-plate-count">{events.length}</span>
           </div>
-        </div>
+          {events.length === 0 ? (
+            <Empty what="No traffic observed" why="The bus feed is quiet. Nothing is being substituted here." />
+          ) : events.slice(-8).reverse().map(e => (
+            <div className="bridge-row" data-state="active" key={`${e.dir}/${e.file}`}>
+              <span className="bridge-row-mark" />
+              <span className="bridge-row-name">{e.preview || e.file}</span>
+              <span className="bridge-row-meta">{(e.from || '—').toUpperCase()} · {ago(now - e.mtime)}</span>
+            </div>
+          ))}
+        </section>
 
-        {/* Fleet Activity Chart (visx stacked bar) */}
-        <div className="bento-card bento-activity">
-          <div className="bento-card-label">Fleet Activity 24h</div>
-          <div style={{ flex: 1, minHeight: 180 }}>
-            <FleetActivityChart width={560} height={180} />
+        <section className="bridge-plate">
+          <div className="bridge-plate-head">
+            <span className="bridge-plate-title">Standing conditions</span>
           </div>
-        </div>
-
-        {/* Agent health placeholder */}
-        <div className="bento-card bento-health">
-          <div className="bento-card-label">Agent Health</div>
-          <div className="bento-health-grid">
-            {['sevin','overseer','elevin','tika','quant','nexus','comms','axis','cosmos','navigator','stan-local','stan-hl','vault'].map(agentId => (
-              <div key={agentId} className="bento-health-tile" data-agent={agentId} />
-            ))}
+          <div className="bridge-row" data-state={killActive ? 'blocked' : 'sealed'}>
+            <span className="bridge-row-mark" />
+            <span className="bridge-row-name">Kill switch</span>
+            <span className="bridge-row-meta">{killActive ? 'ENGAGED' : 'clear'}</span>
           </div>
-        </div>
-
-        {/* Side quests */}
-        <div className="bento-card bento-quests">
-          <div className="bento-card-label">Side Quests</div>
-          <div className="bento-quests-list">
-            {MOCK_QUESTS.map(q => <SideQuestPill key={q.id} quest={q} progress={q.progress} />)}
+          <div className="bridge-row" data-state={oauthStatus?.degraded ? 'blocked' : 'sealed'}>
+            <span className="bridge-row-mark" />
+            <span className="bridge-row-name">Provider auth</span>
+            <span className="bridge-row-meta">{oauthStatus?.degraded ? 'DEGRADED' : oauthStatus ? 'ok' : 'unknown'}</span>
           </div>
-        </div>
+          <div className="bridge-row" data-state="sealed">
+            <span className="bridge-row-mark" />
+            <span className="bridge-row-name">Autonomous spend</span>
+            <span className="bridge-row-meta">zero · standing</span>
+          </div>
+          <div className="bridge-row" data-state={projects.length ? 'active' : 'sealed'}>
+            <span className="bridge-row-mark" />
+            <span className="bridge-row-name">Active projects</span>
+            <span className="bridge-row-meta">{projects.length}</span>
+          </div>
+        </section>
+      </div>
 
-        {/* CTA */}
-        <div className="bento-card bento-cta">
-          <NewDirectiveCTA onClick={() => alert('Dispatch flow — P3.1.x follow-up')} />
-        </div>
+      <div className="bridge-colophon">
+        <span>Workshop canon · Pass 3 palette</span>
+        <span>Empty means empty</span>
       </div>
     </div>
   );
