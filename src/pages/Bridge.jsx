@@ -16,6 +16,7 @@
 import { useMemo } from 'react';
 import './bridge-canon.css';
 import './bridge-arch.css';
+import './bridge-workshop.css';
 
 /* Fleet roster — identity canon, ratified 2026-08-02. Fourteen agents.
    This is an identity list, not data: names are canon, states are derived. */
@@ -101,6 +102,18 @@ function Architecture({ arch }) {
           <div className="bridge-arch-rail" />
           <div className="bridge-arch-floor" />
           <div className="bridge-arch-route" />
+        </>
+      )}
+      {arch === 'W' && (
+        <>
+          <div className="bridge-arch-wall" />
+          <div className="bridge-arch-window">
+            <img src="/ai-city/workshop-establishing.png" alt="" />
+          </div>
+          <div className="bridge-arch-ring" />
+          <div className="bridge-arch-floor" />
+          <div className="bridge-arch-lamp" />
+          <div className="bridge-arch-vignette" />
         </>
       )}
       {arch === 'C' && (

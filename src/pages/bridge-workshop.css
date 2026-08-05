@@ -1,0 +1,373 @@
+/**
+ * bridge-workshop.css — the Bridge as the Workshop interior.
+ *
+ * Architect direction, 2026-08-04: the AI-City frames are renderings, not the
+ * finished product — "I want you to emulate that design." The prior arch
+ * variants abstracted the imagery into hairlines. This one builds the room:
+ * masonry bays with real reveal depth, oiled-timber work surfaces under lamps,
+ * brass hardware, the glass specimen case, the amber route running the floor
+ * to the city arch.
+ *
+ * Standing constraint that still binds, because it is a data rule and not a
+ * style rule: every value on the page still derives from a live prop, an empty
+ * feed still reads empty, and no material effect ever touches a number.
+ * Material is applied to the ROOM. Data sits on it, never inside it.
+ *
+ * The flat-canon prohibition on gradients and lift is deliberately relaxed
+ * here under that direction — the reference is a lit interior, and a lit
+ * interior cannot be drawn in hairlines.
+ *
+ * Selected by [data-arch='W'].
+ */
+
+.bridge[data-arch='W'] {
+  --stone:        #1C1710;
+  --stone-lit:    #2A2116;
+  --stone-dark:   #100C08;
+  --timber:       #2B1D12;
+  --timber-lit:   #3A2818;
+  --brass:        #B89555;
+  --brass-lit:    #D8B77A;
+  --lamp:         rgba(232, 180, 92, 0.20);
+  --glass-teal:   rgba(116, 199, 195, 0.13);
+  background: #0A0806;
+}
+
+/* The canon route line is replaced here by the floor route in the room. */
+.bridge[data-arch='W']::before { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE ROOM
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Back wall — vertical timber panelling, warm and near-black, with the
+   panel joints reading as structure rather than pattern. */
+.bridge[data-arch='W'] .bridge-arch-wall {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.34) 0px,
+      rgba(0,0,0,0.34) 2px,
+      transparent 2px,
+      transparent 168px),
+    linear-gradient(180deg, #17110B 0%, #120D09 46%, #0C0906 100%);
+}
+
+/* Vignette — the room falls away at the edges, as in every approved frame. */
+.bridge[data-arch='W'] .bridge-arch-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 34%,
+    transparent 0%,
+    rgba(6, 4, 3, 0.42) 62%,
+    rgba(6, 4, 3, 0.86) 100%);
+}
+
+/* The city arch — the Workshop window onto Scroll City, at real presence.
+   This is the room's light source; everything else is lit relative to it. */
+.bridge[data-arch='W'] .bridge-arch-window {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 1240px;
+  height: 470px;
+  border-radius: 50% 50% 0 0 / 34% 34% 0 0;
+  overflow: hidden;
+  /* The wall thickness IS the arch. Carrying it on the aperture itself keeps
+     the stone and the opening on one radius — a separate ring never aligns. */
+  border: 15px solid var(--stone);
+  border-bottom: 0;
+  box-shadow:
+    inset 0 0 0 2px rgba(184, 149, 85, 0.42),   /* brass reveal, inner edge */
+    inset 0 20px 44px rgba(0, 0, 0, 0.62),      /* soffit shadow */
+    0 0 0 2px rgba(0, 0, 0, 0.9),               /* stone outer shadow line */
+    0 0 46px 12px rgba(0, 0, 0, 0.72);
+}
+
+.bridge[data-arch='W'] .bridge-arch-window img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: 34% 20%;
+  opacity: 1;
+  filter: saturate(1.02) contrast(1.06) brightness(1.02);
+}
+
+/* Depth of the opening: the reveal darkens the jamb, the crown falls to black,
+   and the sill dissolves into the floor so the room reads continuous. */
+.bridge[data-arch='W'] .bridge-arch-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(8, 6, 4, 0.40) 0%,
+      rgba(8, 6, 4, 0.00) 26%,
+      rgba(8, 6, 4, 0.22) 62%,
+      rgba(10, 8, 6, 0.88) 90%,
+      #0A0806 100%),
+    radial-gradient(78% 94% at 50% 58%,
+      transparent 42%, rgba(10, 8, 6, 0.72) 100%);
+}
+
+/* Keystone — the carved block at the crown of the arch. The wall thickness
+   itself lives on the aperture above; this is the one piece of masonry that
+   has to sit proud of it. */
+.bridge[data-arch='W'] .bridge-arch-ring {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 86px; height: 46px;
+  background: linear-gradient(180deg, var(--stone-lit) 0%, var(--stone) 60%, var(--stone-dark) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 180, 92, 0.34),
+    0 6px 18px rgba(0, 0, 0, 0.8);
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+}
+
+/* The floor — oiled boards in perspective, catching the amber route that runs
+   out of the city arch toward the viewer. Straight from the reference frame. */
+.bridge[data-arch='W'] .bridge-arch-floor {
+  position: absolute;
+  left: 0; right: 0; top: 430px; bottom: 0;
+  background:
+    /* the route, widening toward the viewer */
+    linear-gradient(180deg,
+      rgba(232, 180, 92, 0.16) 0%,
+      rgba(232, 180, 92, 0.05) 26%,
+      transparent 58%),
+    /* board joints running to the vanishing point */
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.30) 0px,
+      rgba(0,0,0,0.30) 2px,
+      transparent 2px,
+      transparent 132px),
+    linear-gradient(180deg, #2A1C11 0%, #1A120C 40%, #0C0906 100%);
+  box-shadow: inset 0 2px 0 rgba(184, 149, 85, 0.26);
+}
+
+/* Lamp pool over the whole floor plane — one warm source, as in the frame. */
+.bridge[data-arch='W'] .bridge-arch-lamp {
+  position: absolute;
+  left: 0; right: 0; top: 400px;
+  height: 620px;
+  background: radial-gradient(58% 62% at 50% 0%,
+    rgba(232, 180, 92, 0.15) 0%,
+    rgba(232, 180, 92, 0.05) 44%,
+    transparent 74%);
+}
+
+/* Mezzanine balustrade running the upper right, as in the establishing frame. */
+.bridge[data-arch='W'] .bridge-arch-rail {
+  position: absolute;
+  right: 0; top: 300px;
+  width: 300px; height: 34px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(184, 149, 85, 0.40) 0px,
+      rgba(184, 149, 85, 0.40) 3px,
+      transparent 3px,
+      transparent 30px),
+    linear-gradient(180deg, rgba(43,29,18,0.9), rgba(12,9,6,0.9));
+  border-top: 4px solid rgba(184, 149, 85, 0.68);
+  border-bottom: 3px solid rgba(184, 149, 85, 0.44);
+}
+
+/* Same on the left, shorter — the room is not symmetrical in the frame. */
+.bridge[data-arch='W'] .bridge-arch-rail-l {
+  position: absolute;
+  left: 0; top: 300px;
+  width: 210px; height: 34px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(184, 149, 85, 0.40) 0px,
+      rgba(184, 149, 85, 0.40) 3px,
+      transparent 3px,
+      transparent 30px),
+    linear-gradient(180deg, rgba(43,29,18,0.9), rgba(12,9,6,0.9));
+  border-top: 4px solid rgba(184, 149, 85, 0.68);
+  border-bottom: 3px solid rgba(184, 149, 85, 0.44);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MASTHEAD — stands in the room, under the arch
+   ══════════════════════════════════════════════════════════════════ */
+
+.bridge[data-arch='W'] .bridge-masthead {
+  position: relative;
+  padding: 262px 48px 26px;
+  border-bottom: 0;
+}
+
+/* Text needs ground. The room falls away behind the masthead so no headline
+   or standing count is ever read against a lit figure in the frame. */
+.bridge[data-arch='W'] .bridge-masthead::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 260px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(10, 8, 6, 0.72) 46%, rgba(10, 8, 6, 0.94) 100%),
+    linear-gradient(90deg, rgba(10, 8, 6, 0.92) 0%, rgba(10, 8, 6, 0.30) 34%,
+                           rgba(10, 8, 6, 0.30) 66%, rgba(10, 8, 6, 0.92) 100%);
+}
+
+.bridge[data-arch='W'] .bridge-masthead > * { position: relative; z-index: 1; }
+
+.bridge[data-arch='W'] .bridge-title {
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.9), 0 0 60px rgba(232, 180, 92, 0.14);
+}
+
+.bridge[data-arch='W'] .bridge-standing-value {
+  text-shadow: 0 0 34px rgba(232, 180, 92, 0.55);
+}
+
+/* Feed rail — a brass instrument strip fixed to the wall. */
+.bridge[data-arch='W'] .bridge-feeds {
+  margin: 0 48px;
+  padding: 0 18px;
+  border: 1px solid rgba(184, 149, 85, 0.26);
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(38, 26, 16, 0.88), rgba(16, 12, 8, 0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(232, 180, 92, 0.20),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.55),
+    0 10px 26px rgba(0, 0, 0, 0.55);
+}
+
+.bridge[data-arch='W'] .bridge-feed { border-right-color: rgba(184, 149, 85, 0.20); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATIONS — each plate is a lit work surface inside a masonry bay
+   ══════════════════════════════════════════════════════════════════ */
+
+.bridge[data-arch='W'] .bridge-plates {
+  gap: 26px;
+  padding: 34px 48px 20px;
+}
+
+.bridge[data-arch='W'] .bridge-plate {
+  position: relative;
+  border: 0;
+  padding: 30px 26px 26px;
+  border-radius: 3px;
+  /* The work surface: oiled timber, lit from above, dark at the near edge. */
+  background:
+    linear-gradient(180deg,
+      rgba(58, 40, 24, 0.92) 0%,
+      rgba(36, 25, 15, 0.94) 34%,
+      rgba(18, 13, 9, 0.96) 100%);
+  box-shadow:
+    /* brass top edge catching the lamp */
+    inset 0 1px 0 rgba(232, 180, 92, 0.34),
+    /* the bay reveal — stone thickness around the station */
+    0 0 0 1px rgba(184, 149, 85, 0.22),
+    0 0 0 9px var(--stone),
+    0 0 0 10px rgba(0, 0, 0, 0.72),
+    /* the station sits in the room and casts */
+    0 22px 46px rgba(0, 0, 0, 0.62);
+}
+
+.bridge[data-arch='W'] .bridge-plate + .bridge-plate { border-left: 0; }
+
+/* Lamp pooling on the surface, brightest under the header. */
+.bridge[data-arch='W'] .bridge-plate::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 150px;
+  border-radius: 3px 3px 0 0;
+  background: radial-gradient(70% 100% at 30% 0%,
+    rgba(232, 180, 92, 0.13), transparent 72%);
+  pointer-events: none;
+}
+
+/* Brass corner bracket — hardware, bottom right of every station. */
+.bridge[data-arch='W'] .bridge-plate::after {
+  content: '';
+  position: absolute;
+  right: 10px; bottom: 10px;
+  width: 16px; height: 16px;
+  border-right: 2px solid rgba(184, 149, 85, 0.44);
+  border-bottom: 2px solid rgba(184, 149, 85, 0.44);
+  pointer-events: none;
+}
+
+.bridge[data-arch='W'] .bridge-plate-head {
+  position: relative;
+  z-index: 2;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(184, 149, 85, 0.28);
+  margin-bottom: 14px;
+}
+
+.bridge[data-arch='W'] .bridge-plate-title {
+  color: #D9B778;
+  text-shadow: 0 0 18px rgba(232, 180, 92, 0.30);
+}
+
+.bridge[data-arch='W'] .bridge-row {
+  position: relative;
+  z-index: 2;
+  border-bottom-color: rgba(237, 228, 214, 0.10);
+}
+
+.bridge[data-arch='W'] .bridge-empty,
+.bridge[data-arch='W'] .bridge-roster { position: relative; z-index: 2; }
+
+/* The Fleet station reads as the Workshop's glass specimen case: cool interior
+   light behind glazing, brass mullions between cells. Its coolness is the one
+   non-amber light in the room, exactly as the cabinets are in the frame. */
+.bridge[data-arch='W'] .bridge-plate--full {
+  background:
+    linear-gradient(180deg,
+      rgba(30, 40, 40, 0.62) 0%,
+      rgba(20, 26, 27, 0.80) 40%,
+      rgba(14, 14, 13, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(116, 199, 195, 0.30),
+    0 0 0 1px rgba(116, 199, 195, 0.20),
+    0 0 0 9px var(--stone),
+    0 0 0 10px rgba(0, 0, 0, 0.72),
+    0 22px 46px rgba(0, 0, 0, 0.62);
+}
+
+.bridge[data-arch='W'] .bridge-plate--full::before {
+  background: radial-gradient(70% 100% at 50% 0%,
+    var(--glass-teal), transparent 74%);
+}
+
+.bridge[data-arch='W'] .bridge-plate--full .bridge-plate-title {
+  color: #9FD4D1;
+  text-shadow: 0 0 18px rgba(116, 199, 195, 0.32);
+}
+
+.bridge[data-arch='W'] .bridge-plate--full .bridge-plate-head {
+  border-bottom-color: rgba(116, 199, 195, 0.28);
+}
+
+/* Glazing bars between roster cells. */
+.bridge[data-arch='W'] .bridge-roster { border-top-color: rgba(116, 199, 195, 0.22); }
+
+.bridge[data-arch='W'] .bridge-roster-cell {
+  padding-left: 12px;
+  border-bottom-color: rgba(116, 199, 195, 0.14);
+  border-right: 1px solid rgba(116, 199, 195, 0.12);
+}
+
+.bridge[data-arch='W'] .bridge-roster-cell:nth-child(7n) { border-right: 0; }
+
+/* Colophon — a brass plate screwed to the near edge of the floor. */
+.bridge[data-arch='W'] .bridge-colophon {
+  border-top: 1px solid rgba(184, 149, 85, 0.26);
+  padding: 16px 48px;
+  color: #8E8168;
+}
+
+@media (max-width: 1100px) {
+  .bridge[data-arch='W'] .bridge-masthead { padding-top: 190px; }
+  .bridge[data-arch='W'] .bridge-plates { padding: 24px 20px 16px; }
+}
