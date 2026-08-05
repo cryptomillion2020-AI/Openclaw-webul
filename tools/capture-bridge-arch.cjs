@@ -8,15 +8,8 @@ const OUT = process.argv[2] || '/tmp/bridge-arch';
 const BASE = process.env.CAPTURE_BASE || 'http://127.0.0.1:5199';
 
 const SHOTS = [
-  ['W-workshop-loaded', '?state=loaded&arch=W'],
-  ['W-workshop-quiet',  '?arch=W'],
-  ['00-FLAT-baseline-loaded', '?state=loaded'],
-  ['A-arcade-loaded',         '?state=loaded&arch=A'],
-  ['A-arcade-quiet',          '?arch=A'],
-  ['B-mezzanine-loaded',      '?state=loaded&arch=B'],
-  ['B-mezzanine-quiet',       '?arch=B'],
-  ['C-window-loaded',         '?state=loaded&arch=C'],
-  ['C-window-quiet',          '?arch=C'],
+  ['W-workshop-loaded', '?state=loaded'],
+  ['W-workshop-quiet',  ''],
 ];
 
 (async () => {

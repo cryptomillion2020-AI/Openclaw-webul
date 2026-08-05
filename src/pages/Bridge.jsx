@@ -15,7 +15,6 @@
  */
 import { useMemo } from 'react';
 import './bridge-canon.css';
-import './bridge-arch.css';
 import './bridge-workshop.css';
 
 /* Fleet roster — identity canon, ratified 2026-08-02. Fourteen agents.
@@ -81,50 +80,25 @@ function FeedRail({ feedHealth, connected }) {
 }
 
 /**
- * Architecture layer. Purely structural light and line drawn from the approved
- * AI-City frames; it carries no data and never overlays a value. Renders
- * nothing when no variant is selected, so the flat canon page is unchanged.
+ * The room. Architect-approved 2026-08-04 (Workshop emulation, variant W):
+ * masonry aperture onto Scroll City, oiled-timber floor, lamp, vignette.
+ *
+ * This layer is environment only. It carries no data and never overlays a
+ * value — material is applied to the room, never to a number. Passing
+ * arch={null} strips it back to the flat canon page.
  */
 function Architecture({ arch }) {
-  if (!arch) return null;
+  if (arch !== 'W') return null;
   return (
     <div className="bridge-arch" aria-hidden="true">
-      {arch === 'A' && (
-        <>
-          <div className="bridge-arch-recede"><span /><span /><span /></div>
-          <div className="bridge-arch-floor" />
-        </>
-      )}
-      {arch === 'B' && (
-        <>
-          <div className="bridge-arch-gallery" />
-          <div className="bridge-arch-opening" />
-          <div className="bridge-arch-rail" />
-          <div className="bridge-arch-floor" />
-          <div className="bridge-arch-route" />
-        </>
-      )}
-      {arch === 'W' && (
-        <>
-          <div className="bridge-arch-wall" />
-          <div className="bridge-arch-window">
-            <img src="/ai-city/workshop-establishing.png" alt="" />
-          </div>
-          <div className="bridge-arch-ring" />
-          <div className="bridge-arch-floor" />
-          <div className="bridge-arch-lamp" />
-          <div className="bridge-arch-vignette" />
-        </>
-      )}
-      {arch === 'C' && (
-        <>
-          <div className="bridge-arch-window">
-            <img src="/ai-city/workshop-establishing.png" alt="" />
-          </div>
-          <div className="bridge-arch-mullions"><span /><span /></div>
-          <div className="bridge-arch-sill" />
-        </>
-      )}
+      <div className="bridge-arch-wall" />
+      <div className="bridge-arch-window">
+        <img src="/ai-city/workshop-establishing.png" alt="" />
+      </div>
+      <div className="bridge-arch-ring" />
+      <div className="bridge-arch-floor" />
+      <div className="bridge-arch-lamp" />
+      <div className="bridge-arch-vignette" />
     </div>
   );
 }
@@ -147,7 +121,9 @@ export function Bridge({
   activeTasks,
   oauthStatus,
   feedHealth,
-  arch,
+  /* Architect-approved room treatment. Default, not opt-in — the shipped
+     route renders the Workshop. */
+  arch = 'W',
 }) {
   const events   = Array.isArray(busActivity)   ? busActivity   : [];
   const taskList = Array.isArray(tasks)         ? tasks         : [];
