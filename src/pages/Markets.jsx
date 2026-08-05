@@ -31,13 +31,28 @@ const MOCK_TRADES = [
   { ts: '13:30:08', symbol: 'ETH', side: 'BUY',  qty: 0.98,  px: 3750.40 },
 ];
 
-export function Markets({ busActivity }) {
+export function Markets({ busActivity, marketContext, feedHealth }) {
   const pnlClass = MOCK_PNL.direction === 'down' ? 'is-bearish' : '';
+  const marketFeed = feedHealth?.market_context;
+  const contextLive = marketFeed?.state === 'LIVE' ? marketContext : null;
   return (
     <div className="markets-page">
       <ConstellationScene busActivity={busActivity} />
 
       <div className="markets-grid">
+        <div className="bento-card">
+          <div className="bento-card-label">Market Context · {marketFeed?.state || 'DEAD'}</div>
+          {contextLive ? (
+            <>
+              <div className="bento-card-hero">{contextLive.sentiment?.regime || contextLive.volatility?.regime || 'Current'}</div>
+              <div className="bento-card-sub">Generated {contextLive.generated_at || 'timestamp unavailable'}</div>
+              <div className="gate-row"><span>Macro</span><span>{contextLive.macro?.regime || contextLive.macro?.summary || 'available'}</span></div>
+              <div className="gate-row"><span>Data quality</span><span>{contextLive.data_quality?.status || 'available'}</span></div>
+            </>
+          ) : (
+            <div className="bento-card-sub">No current market-context data. Feed {marketFeed?.state || 'DEAD'}{marketFeed?.lastMessageAt ? ` since ${new Date(marketFeed.lastMessageAt).toLocaleTimeString()}` : ''}.</div>
+          )}
+        </div>
         <div className={`bento-card markets-pnl ${pnlClass}`}>
           <div className="bento-card-label">Open P&L (Paper)</div>
           <div className="bento-card-hero">${MOCK_PNL.current.toFixed(2)}</div>

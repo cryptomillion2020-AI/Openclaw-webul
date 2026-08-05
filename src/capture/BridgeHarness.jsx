@@ -50,7 +50,12 @@ const LOADED = {
   ],
 };
 
-const mode = new URLSearchParams(location.search).get('state') === 'loaded' ? LOADED : QUIET;
+const params = new URLSearchParams(location.search);
+const mode = params.get('state') === 'loaded' ? LOADED : QUIET;
+
+/* Architectural variant for Architect selection: A arcade, B mezzanine,
+   C window. Absent => the approved flat canon, unchanged. */
+const arch = params.get('arch') || null;
 
 document.documentElement.style.background = '#0B0906';
-createRoot(document.getElementById('root')).render(<Bridge {...mode} />);
+createRoot(document.getElementById('root')).render(<Bridge {...mode} arch={arch} />);

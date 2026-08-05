@@ -151,6 +151,16 @@ export function useWebSocket({
     }
   }, []);
 
+  // Per-feed recovery does not tear down the shared socket: doing so would let
+  // one failed feed interrupt every healthy feed. Re-announce the affected
+  // subscription and request a canonical snapshot instead.
+  const reconnectFeed = useCallback((channel) => {
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return false;
+    wsRef.current.send(JSON.stringify({ type: 'subscribe', channels: [channel] }));
+    wsRef.current.send(JSON.stringify({ type: 'request_full_state' }));
+    return true;
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
@@ -165,5 +175,5 @@ export function useWebSocket({
     };
   }, [autoConnect, connect]);
 
-  return { connected, send, subscribe };
+  return { connected, send, subscribe, reconnectFeed };
 }

@@ -86,8 +86,9 @@ function formatTime(value) {
     : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function AiCityPage({ tasks = [], activeTasks = [], busActivity = [], oauthStatus = {}, connected = false }) {
-  const cityData = useCityData({ connected, tasks, activeTasks, busActivity, oauthStatus });
+export default function AiCityPage({ tasks = [], activeTasks = [], busActivity = [], oauthStatus = {}, connected = false, cityState = null, feedHealth = {} }) {
+  const cityFeedLive = feedHealth?.city_state?.state === 'LIVE';
+  const cityData = useCityData({ connected, tasks, activeTasks, busActivity, oauthStatus, cityState: cityFeedLive ? cityState : null });
   const [fleetState, setFleetState] = useState(() => initialQueryValue('state', VALID_STATES, 'live'));
   const [cycleOverride, setCycleOverride] = useState(() => initialQueryValue('cycle', VALID_CYCLES, null));
   const [selectedId, setSelectedId] = useState(null);
@@ -95,7 +96,8 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
 
   const taskByAgent = useMemo(() => {
     const index = new Map();
-    const candidates = [...(Array.isArray(activeTasks) ? activeTasks : []), ...(Array.isArray(tasks) ? tasks : [])];
+    const liveTasks = cityData.agents.map(agent => agent.task).filter(Boolean);
+    const candidates = [...liveTasks, ...(Array.isArray(activeTasks) ? activeTasks : []), ...(Array.isArray(tasks) ? tasks : [])];
     candidates.forEach(task => {
       const agent = taskAgent(task);
       if (!agent) return;
@@ -103,7 +105,7 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
       if (!existing || representativeTaskRank(task) > representativeTaskRank(existing)) index.set(agent, task);
     });
     return index;
-  }, [activeTasks, tasks]);
+  }, [activeTasks, cityData.agents, tasks]);
 
   const makers = useMemo(() => MAKERS.map((maker, index) => {
     const task = taskByAgent.get(maker.id) || null;
@@ -129,7 +131,7 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
     if (state === 'pending') summary.pending += 1;
     return summary;
   }, { complete: 0, active: 0, pending: 0 }), [taskByAgent]);
-  const feed = Array.isArray(busActivity) ? busActivity.slice(-4).reverse() : [];
+  const feed = Array.isArray(cityData.busActivity) ? cityData.busActivity.slice(-4).reverse() : [];
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -161,12 +163,20 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
       data-runtime-source={AGENT_RUNTIME_SOURCE.path}
       data-runtime-sha256={AGENT_RUNTIME_SOURCE.sha256}
       data-testid="aicity-district-page"
+      data-city-feed-state={feedHealth?.city_state?.state || 'DEAD'}
     >
       <header className="aicity-district-header">
         <div className="aicity-title-block">
           <span className="aicity-eyebrow">Fleet · the long bench</span>
           <h1>The <em>Workshop</em></h1>
           <p>One bench, lit from above. Each maker holds a live piece of work. Finished work stays visible on the shelf.</p>
+          <p data-testid="city-feed-health">
+            AI-City state · {feedHealth?.city_state?.state || 'DEAD'} · {
+              feedHealth?.city_state?.lastMessageAt
+                ? `last message ${new Date(feedHealth.city_state.lastMessageAt).toLocaleTimeString()}`
+                : 'no message received'
+            }
+          </p>
         </div>
         <div className="aicity-controls">
           <div className="aicity-cycle" role="group" aria-label="Day and night cycle">

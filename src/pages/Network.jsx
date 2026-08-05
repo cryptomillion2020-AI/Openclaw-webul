@@ -56,7 +56,7 @@ const STATUS_COLOR = {
   airgap:  'var(--status-airgap)',
 };
 
-export function Network({ busActivity, onSend }) {
+export function Network({ busActivity, onSend, commsAnomaly, feedHealth }) {
   const [selectedChannel, setSelectedChannel] = useState('sevin');
   const [priority, setPriority] = useState('P2');
   const [draft, setDraft] = useState('');
@@ -74,6 +74,15 @@ export function Network({ busActivity, onSend }) {
       <ConstellationScene busActivity={busActivity} />
 
       <div className="network-grid">
+        <div className="bento-card">
+          <div className="bento-card-label">Comms Safety · MONITORING</div>
+          {commsAnomaly ? (
+            <div className="thread-msg">
+              <div className="thread-msg-meta"><span className="thread-msg-from">ANOMALY</span><span>{commsAnomaly.ts || 'time unavailable'}</span></div>
+              <div className="thread-msg-body">{commsAnomaly.reason || 'Unspecified communications anomaly'}</div>
+            </div>
+          ) : <div style={{ padding: 16, color: 'var(--text-muted)', fontSize: 13 }}>No communications anomalies received.</div>}
+        </div>
         <div className="bento-card network-channels">
           <div className="bento-card-label">Channels</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

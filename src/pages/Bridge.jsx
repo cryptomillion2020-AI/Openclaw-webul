@@ -15,6 +15,7 @@
  */
 import { useMemo } from 'react';
 import './bridge-canon.css';
+import './bridge-arch.css';
 
 /* Fleet roster — identity canon, ratified 2026-08-02. Fourteen agents.
    This is an identity list, not data: names are canon, states are derived. */
@@ -78,6 +79,43 @@ function FeedRail({ feedHealth, connected }) {
   );
 }
 
+/**
+ * Architecture layer. Purely structural light and line drawn from the approved
+ * AI-City frames; it carries no data and never overlays a value. Renders
+ * nothing when no variant is selected, so the flat canon page is unchanged.
+ */
+function Architecture({ arch }) {
+  if (!arch) return null;
+  return (
+    <div className="bridge-arch" aria-hidden="true">
+      {arch === 'A' && (
+        <>
+          <div className="bridge-arch-recede"><span /><span /><span /></div>
+          <div className="bridge-arch-floor" />
+        </>
+      )}
+      {arch === 'B' && (
+        <>
+          <div className="bridge-arch-gallery" />
+          <div className="bridge-arch-opening" />
+          <div className="bridge-arch-rail" />
+          <div className="bridge-arch-floor" />
+          <div className="bridge-arch-route" />
+        </>
+      )}
+      {arch === 'C' && (
+        <>
+          <div className="bridge-arch-window">
+            <img src="/ai-city/workshop-establishing.png" alt="" />
+          </div>
+          <div className="bridge-arch-mullions"><span /><span /></div>
+          <div className="bridge-arch-sill" />
+        </>
+      )}
+    </div>
+  );
+}
+
 function Empty({ what, why }) {
   return (
     <div className="bridge-empty">
@@ -96,6 +134,7 @@ export function Bridge({
   activeTasks,
   oauthStatus,
   feedHealth,
+  arch,
 }) {
   const events   = Array.isArray(busActivity)   ? busActivity   : [];
   const taskList = Array.isArray(tasks)         ? tasks         : [];
@@ -122,7 +161,8 @@ export function Bridge({
   const inflight = taskList.filter(t => /progress|active|in_flight/i.test(t.status || ''));
 
   return (
-    <div className="bridge">
+    <div className="bridge" data-arch={arch || undefined}>
+      <Architecture arch={arch} />
       <header className="bridge-masthead">
         <div>
           <div className="bridge-eyebrow">Master Workflow · Command Bridge</div>

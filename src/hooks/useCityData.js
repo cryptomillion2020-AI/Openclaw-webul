@@ -65,6 +65,7 @@ export function useCityData({
   activeTasks = [],
   oauthStatus = {},
   busActivity = [],
+  cityState = null,
 } = {}) {
   const [timeOfDay, setTimeOfDay] = useState('day');
   const [stateOverrides, setStateOverrides] = useState({});
@@ -82,7 +83,7 @@ export function useCityData({
     setStateOverrides(previous => ({ ...previous, [agent]: { state: newState, task: taskInfo } }));
   }, []);
 
-  const agents = useMemo(() => AGENT_NAMES.map((name, index) => {
+  const derivedAgents = useMemo(() => AGENT_NAMES.map((name, index) => {
     const task = stateOverrides[name]?.task || selectedTasks.get(name) || null;
     const profile = oauthStatus?.[name] || null;
     return {
@@ -97,6 +98,33 @@ export function useCityData({
       connected,
     };
   }), [connected, oauthStatus, selectedTasks, stateOverrides, timeOfDay]);
+
+  const agents = useMemo(() => {
+    if (!Array.isArray(cityState?.agents)) return derivedAgents;
+    const live = new Map(cityState.agents.map(agent => [
+      normalizeAgent(agent.agent_id ?? agent.agentId ?? agent.name ?? agent.id),
+      agent,
+    ]));
+    return derivedAgents.map(agent => {
+      const current = live.get(agent.name);
+      if (!current) return agent;
+      const activity = current.activity === 'active' || current.activity === 'pending'
+        ? current.activity
+        : (timeOfDay === 'night' ? 'idle_night' : 'idle_day');
+      const task = current.task_id ? {
+        id: current.task_id,
+        label: current.task_label || current.task_id,
+        status: current.activity,
+        agentId: agent.name,
+      } : null;
+      return {
+        ...agent,
+        presence: current.presence,
+        currentState: activity,
+        task,
+      };
+    });
+  }, [cityState, derivedAgents, timeOfDay]);
 
   useEffect(() => {
     if (import.meta.env.DEV && typeof window !== 'undefined') {
@@ -115,9 +143,9 @@ export function useCityData({
 
   return {
     agents,
-    buildings: [],
+    buildings: Array.isArray(cityState?.stations) ? cityState.stations : [],
     tasks: [...safeActiveTasks, ...safeTasks],
-    busActivity: Array.isArray(busActivity) ? busActivity : [],
+    busActivity: Array.isArray(cityState?.bus_routes) ? cityState.bus_routes : (Array.isArray(busActivity) ? busActivity : []),
     timeOfDay,
     setAgentState,
   };

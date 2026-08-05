@@ -11,8 +11,9 @@
  *   6. Team Research— 12-agent non-VAULT research pool
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocket }   from './hooks/useWebSocket';
+import { useFeedHealth }  from './hooks/useFeedHealth';
 import { soundManager }    from './lib/soundManager';
 import { Sidebar }         from './components/Sidebar';
 import { Dashboard }       from './pages/Dashboard';
@@ -33,7 +34,16 @@ import { PageTransition } from './components/PageTransition';
 import './App.css';
 
 // Channels the dashboard subscribes to on connect
-const SUBSCRIBE_CHANNELS = ['kill_switch', 'bus_activity', 'oauth_status', 'mode3'];
+export const SUBSCRIBE_CHANNELS = [
+  'full_state', 'active_projects_delta', 'task_update', 'kill_switch_update',
+  'bus_activity_delta', 'comms_delta', 'research_delta', 'market_context_update',
+  'comms_anomaly', 'idle_tick', 'city_state',
+];
+
+const FEEDS = Object.freeze({
+  market_context: { label: 'Market context', expectedCadenceMs: 60_000, staleMultiplier: 1, deadMultiplier: 2, maxReconnects: 2 },
+  city_state: { label: 'AI-City state', expectedCadenceMs: 5_000, staleMultiplier: 2, deadMultiplier: 4, maxReconnects: 2 },
+});
 
 // Wave 4b-A: per-channel comms ring buffer cap
 const COMMS_RING_LIMIT = 200;
@@ -133,6 +143,17 @@ export default function App() {
   const [activeProjects, setActiveProjects]   = useState([]);
   const [activeTasks,    setActiveTasks]      = useState([]);
   const [lastUpdate,      setLastUpdate]      = useState(null);
+  const [marketContext,   setMarketContext]   = useState(null);
+  const [commsAnomaly,    setCommsAnomaly]    = useState(null);
+  const [cityState,       setCityState]       = useState(null);
+  const reconnectFeedRef = useRef(null);
+  const handleFeedReconnect = useCallback((feedId) => {
+    reconnectFeedRef.current?.(feedId);
+  }, []);
+  const { health: feedHealth, markMessage, markAllDead } = useFeedHealth({
+    feeds: FEEDS,
+    onReconnect: handleFeedReconnect,
+  });
 
   // ---------------------------------------------------------------------------
   // Message handler (passed to useWebSocket)
@@ -155,6 +176,10 @@ export default function App() {
       setTasks(msg.tasks || []);
       setActiveProjects(msg.active_projects || []);
       setActiveTasks(msg.active_tasks || []);
+      if (msg.city_state) {
+        setCityState(msg.city_state);
+        markMessage('city_state');
+      }
       // Wave 4c: seed per-channel Comms scrollback so the AgentComms page
       // renders historical messages immediately on connect.
       if (msg.comms_history && typeof msg.comms_history === 'object') {
@@ -276,21 +301,32 @@ export default function App() {
         if (prev.some(e => e.file === msg.file && e.dir === msg.dir)) return prev;
         return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
+    } else if (msg.type === 'market_context_update') {
+      const cadence = Math.max(1000, Number(msg.context?.freshness_ttl_seconds || 60) * 1000);
+      setMarketContext(msg.context || null);
+      markMessage('market_context', Date.now(), cadence);
+    } else if (msg.type === 'comms_anomaly') {
+      setCommsAnomaly(msg);
+    } else if (msg.type === 'city_state') {
+      setCityState(msg);
+      markMessage('city_state');
     }
-  }, []);
+  }, [markMessage]);
 
   // ---------------------------------------------------------------------------
   // WebSocket hook
   // ---------------------------------------------------------------------------
-  const { connected, send } = useWebSocket({
+  const { connected, send, reconnectFeed } = useWebSocket({
     onMessage: handleMessage,
     channels: SUBSCRIBE_CHANNELS,
     autoConnect: true,
   });
+  reconnectFeedRef.current = reconnectFeed;
 
   useEffect(() => {
     if (connected) soundManager.play('agent-online');
-  }, [connected]);
+    else markAllDead();
+  }, [connected, markAllDead]);
 
   // ---------------------------------------------------------------------------
   // Wave 4b-A: local-echo enqueue for AgentComms
@@ -342,15 +378,16 @@ export default function App() {
     tasks,
     activeProjects,
     activeTasks,
+    feedHealth,
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard': return <Bridge {...pageProps} />;
       case 'bridge':    return <Bridge {...pageProps} />;
-      case 'comms':     return <Network busActivity={busActivity} onSend={send} />;
-      case 'trading':   return <Markets busActivity={busActivity} />;
-      case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} />;
+      case 'comms':     return <Network busActivity={busActivity} onSend={send} commsAnomaly={commsAnomaly} feedHealth={feedHealth} />;
+      case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} feedHealth={feedHealth} />;
+      case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} cityState={cityState} feedHealth={feedHealth} />;
       case 'vault':     return <Vault busActivity={busActivity} />;
       case 'research':  return <Lab busActivity={busActivity} />;
       // Legacy pages reachable via explicit query param ?page=*-legacy
