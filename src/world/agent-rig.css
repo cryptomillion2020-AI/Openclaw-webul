@@ -1,0 +1,52 @@
+/**
+ * agent-rig.css — presentation for the procedural rig.
+ * Geometry lives in AgentRig.jsx; this file only draws.
+ */
+
+.rig {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+}
+
+.rig-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  /* No transition: the pose is recomputed every frame from the gait clock, so
+     interpolating between poses would fight the solver and smear the gait. */
+}
+
+.rig-part {
+  position: absolute;
+  will-change: transform;
+}
+
+.rig-part > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Contact shadow. Anchors the figure to the floor — without it a rig reads as
+   sliding rather than walking, however good the gait solve is. */
+.rig-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -2%;
+  width: 46%;
+  height: 5%;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent 74%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The rig is driven from JS, which reads the same query and freezes the clock
+     at the neutral pose. Nothing to disable here — noted so the omission does
+     not read as an oversight. */
+  .rig-root { transform-origin: 0 0; }
+}

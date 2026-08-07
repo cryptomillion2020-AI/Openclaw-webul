@@ -28,6 +28,7 @@
  *                     stations state that plainly instead of inventing one.
  */
 import { useMemo } from 'react';
+import { MARKET_FEED_INVENTORY, normalizeMarketFeed, marketFeedState } from '../feeds/marketFeeds';
 import './workshop-room.css';
 
 /* The five Mode 3 conditions, in the order they appear in the state file.
@@ -105,7 +106,8 @@ function Row({ name, meta, state }) {
 export function Markets({ marketContext, mode3, feedHealth }) {
   /* Freshness is judged against the context's OWN declared TTL, not a number
      invented here. A context past its TTL is stale even if the socket is up. */
-  const ctx = marketContext || null;
+  const snapshot = useMemo(() => normalizeMarketFeed(marketContext), [marketContext]);
+  const ctx = snapshot.raw;
 
   const ctxAge = useMemo(() => {
     if (!ctx?.generated_at) return null;
@@ -114,9 +116,7 @@ export function Markets({ marketContext, mode3, feedHealth }) {
   }, [ctx]);
 
   const ttl = ctx?.freshness_ttl_seconds ?? null;
-  const ctxState = !ctx ? 'DEAD'
-    : (ttl != null && ctxAge != null && ctxAge > ttl) ? 'STALE'
-    : 'LIVE';
+  const ctxState = marketFeedState(snapshot).state;
 
   const gates = MODE3.map(([key, label]) => ({ key, label, value: mode3 ? mode3[key] : null }));
   const cleared = gates.filter(g => g.value === true).length;
@@ -176,6 +176,21 @@ export function Markets({ marketContext, mode3, feedHealth }) {
       </div>
 
       <div className="wsroom-stations">
+
+        <section className="wsroom-station wsroom-station--wide">
+          <div className="wsroom-station-head">
+            <span className="wsroom-station-title">Feed inventory</span>
+            <span className="wsroom-station-count">zero autonomous spend</span>
+          </div>
+          {MARKET_FEED_INVENTORY.map(feed => (
+            <Row
+              key={feed.id}
+              name={`${feed.name} · ${feed.tier.toUpperCase()}`}
+              state={feed.status === 'live' ? 'active' : 'unknown'}
+              meta={`${feed.role} · ${feed.cost} · ${feed.auth} · ${feed.rateLimit}`}
+            />
+          ))}
+        </section>
 
         {/* ── Mode 3 gate board ─────────────────────────────────── */}
         <section className="wsroom-station">

@@ -24,3 +24,9 @@ public/sounds/preview/
 p412.mjs
 *.deferred-*
 *.pre-*
+
+# Scroll World build intermediates (SEVIN 2026-08-07): .world-frames/ holds the
+# raw per-scene frame sequences the encoder consumes. The shipped artifacts are
+# public/world/final/*.mp4 + *.jpg, which ARE tracked. 68 MB of intermediates
+# must not enter history.
+.world-frames/

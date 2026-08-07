@@ -1,0 +1,39 @@
+{
+  "_authority": "Architect-approved anchor: AICITY-PASS3-20260803T151124Z / 05-workshop-establishing.png. No art is generated here; the camera moves over approved art.",
+  "_arc": "The Architect's own description, executed literally: 'zoom out of the window and observe the surroundings — the camera pulls back from the bench, through the window, into the surrounding world. Continuous scale, one world, not separate views.' The amber route in the plate runs from the near desks out through the arch into the city, so the camera simply follows the road the art already drew.",
+  "_seams": "Each scene's 'to' is the next scene's 'from', byte-identical. That is the deterministic boundary handoff — it is why the seam score should read ~1.0 rather than merely 'good'.",
+  "_scale_floor": "Scale is never taken below 0.45. The plate is 1536x1024; a tighter crop upscales past ~2x and the softness reads as a compression fault rather than a camera move. A pipeline that silently ships mush is worse than one that refuses the shot.",
+  "size": [1280, 854],
+  "scenes": [
+    {
+      "id": "01-the-bench",
+      "label": "The bench",
+      "source": "ai-city/workshop-establishing.png",
+      "seconds": 3.0,
+      "ease": "inout",
+      "scroll": 1.0,
+      "from": { "cx": 0.50, "cy": 0.72, "scale": 0.48 },
+      "to":   { "cx": 0.50, "cy": 0.55, "scale": 0.72 }
+    },
+    {
+      "id": "02-through-the-window",
+      "label": "Through the window",
+      "source": "ai-city/workshop-establishing.png",
+      "seconds": 3.5,
+      "ease": "inout",
+      "scroll": 1.2,
+      "from": { "cx": 0.50, "cy": 0.55, "scale": 0.72 },
+      "to":   { "cx": 0.38, "cy": 0.35, "scale": 0.55 }
+    },
+    {
+      "id": "03-scroll-city",
+      "label": "Scroll City",
+      "source": "ai-city/workshop-establishing.png",
+      "seconds": 3.0,
+      "ease": "out",
+      "scroll": 1.0,
+      "from": { "cx": 0.38, "cy": 0.35, "scale": 0.55 },
+      "to":   { "cx": 0.34, "cy": 0.20, "scale": 0.45 }
+    }
+  ]
+}

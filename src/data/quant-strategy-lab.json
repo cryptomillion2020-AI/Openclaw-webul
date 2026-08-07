@@ -1,0 +1,123 @@
+{
+  "_meta": {
+    "generated_by": "QUANT",
+    "task_id": "P1-WEBUI-FUNCTIONAL-CRM-20260806",
+    "workstream": "A2 — Trading strategy setup",
+    "generated_utc": "2026-08-07T02:20:00Z",
+    "mode": "Mode 2 — PROPOSAL ONLY",
+    "mode3_status": "HELD",
+    "live_orders": "DISABLED — nothing on this surface can place a trade",
+    "regime_at_authoring": "RISK_NEUTRAL",
+    "regime_source": "shared/state/regime/current.json (generated_at 2026-08-06T13:36:40Z)",
+    "all_trade_math_source": "shared/lib/quant/trade_calc.py (computed-not-reasoned; no value on this surface was reasoned by hand)"
+  },
+  "banner": {
+    "level": "hold",
+    "title": "Mode 2 — Proposal Only · Mode 3 HELD on 5 gates",
+    "detail": "Strategies below are shadow-mode proposals. No live order path exists on this page. Graduation to live capital requires all 5 Mode 3 gates + Architect Shadow-Gate ruling."
+  },
+  "mode3_gates": [
+    { "key": "kill_switch_inactive",    "label": "Kill switch inactive",        "why_closed": "Kill switch surface is the always-available halt; gate is open only when not engaged." },
+    { "key": "paper_mode_confirmed",     "label": "Paper/shadow mode confirmed", "why_closed": "H1 LIVE_MODE=False. Shadow-only until Architect lifts." },
+    { "key": "stan_audit_passed",        "label": "STAN validation audit passed","why_closed": "No STAN audit of these candidates exists yet; dissent from STAN halts deployment." },
+    { "key": "quant_proposal_approved",  "label": "QUANT proposal approved",     "why_closed": "These are freshly filed proposals; not yet approved." },
+    { "key": "architect_authorized",     "label": "Architect authorized",        "why_closed": "Mode 3 requires explicit Architect authorization (IDENTITY.md). Not granted." }
+  ],
+  "survival_limits": {
+    "note": "H3 — FROZEN forever (5/5/5/50). Calculator rejects any sizing that breaches.",
+    "limits": [
+      { "key": "daily",          "cap_pct": 5,  "demo_pass_at_pct": 2, "demo_breach_at_pct": 6 },
+      { "key": "weekly",         "cap_pct": 5 },
+      { "key": "monthly",        "cap_pct": 5 },
+      { "key": "total_drawdown", "cap_pct": 50 }
+    ],
+    "kill_switch_holders": ["Architect", "SEVIN", "OVERSEER"],
+    "kill_switch_note": "Any holder triggers independently, no consensus, no reason required. QUANT never resists."
+  },
+  "strategy_schema": {
+    "description": "Definition contract every candidate strategy must satisfy before it can be proposed.",
+    "fields": [
+      { "field": "strategy_id",     "type": "slug",    "required": true,  "notes": "Unique, stable." },
+      { "field": "setup_class",     "type": "enum",    "required": true,  "notes": "From journal controlled vocabulary (10 classes)." },
+      { "field": "instrument_class","type": "string",  "required": true,  "notes": "us_equity | crypto_spot | fx_major (never a live symbol)." },
+      { "field": "side",            "type": "enum",    "required": true,  "notes": "long | short." },
+      { "field": "entry_rule",      "type": "string",  "required": true,  "notes": "Specific, observable trigger." },
+      { "field": "exit_rule",       "type": "string",  "required": true,  "notes": "Target + stop, both observable." },
+      { "field": "invalidation",    "type": "string",  "required": true,  "notes": "What disproves the thesis." },
+      { "field": "risk_pct_per_trade","type":"decimal","required": true,  "notes": "Fraction of equity risked. Must survive 5/5/5/50." },
+      { "field": "rr_ratio",        "type": "decimal", "required": true,  "notes": "From trade_calc.risk_reward(); passed flag required." },
+      { "field": "expectancy_R",    "type": "decimal", "required": true,  "notes": "From trade_calc.fee_adjusted_expectancy(); must be > 0 net of fees." },
+      { "field": "regime_fit",      "type": "string[]","required": true,  "notes": "Regimes where the edge is expected to hold." },
+      { "field": "mode",            "type": "const",   "required": true,  "notes": "shadow (H1)." }
+    ]
+  },
+  "candidates": [
+    {
+      "strategy_id": "trend-follow-breakout-pullback-v1",
+      "setup_class": "breakout_pullback",
+      "instrument_class": "crypto_spot",
+      "side": "long",
+      "entry_rule": "Price breaks a multi-week range high on expanding volume, then pulls back to the broken level and holds.",
+      "exit_rule": "Target at 2.2R prior-swing projection; stop below the reclaimed breakout level.",
+      "invalidation": "Close back inside the prior range, or volume contracts below the 20-period average on the retest.",
+      "regime_fit": ["RISK_ON", "RISK_NEUTRAL"],
+      "illustrative_prices": { "entry": 84320, "stop": 82100, "target": 89200, "lot_step": 0.001 },
+      "computed": {
+        "rr_ratio": "2.20", "rr_passed": true,
+        "position_size_qty": "0.112", "risk_amount": "250.00", "size_passed": true,
+        "expectancy_R": "0.5250", "expectancy_passed": true,
+        "expectancy_inputs": { "win_rate": 0.45, "avg_win_R": 2.5, "avg_loss_R": 1.0, "fee_per_trade_R": 0.05, "n_trades": 100 }
+      },
+      "calc_note": "Initial lot_step=1 was REJECTED by the calculator (zero_position_quantity) — crypto trades fractional; corrected to lot_step=0.001. Input corrected, output not overridden.",
+      "mode": "shadow"
+    },
+    {
+      "strategy_id": "mean-reversion-band-fade-v1",
+      "setup_class": "mean_reversion",
+      "instrument_class": "us_equity",
+      "side": "long",
+      "entry_rule": "Liquid large-cap extends >2 sigma below a 20-day mean into prior support; enter on the first higher-low reclaim.",
+      "exit_rule": "Target at the 20-day mean (~2.33R); stop below the support shelf.",
+      "invalidation": "Support shelf breaks on a closing basis, or the reclaim fails within 2 sessions.",
+      "regime_fit": ["RISK_NEUTRAL", "RANGE_BOUND"],
+      "illustrative_prices": { "entry": 150.00, "stop": 148.50, "target": 153.50, "lot_step": 1 },
+      "computed": {
+        "rr_ratio": "2.33", "rr_passed": true,
+        "position_size_qty": "167", "risk_amount": "250.00", "size_passed": true,
+        "expectancy_R": "0.3300", "expectancy_passed": true,
+        "expectancy_inputs": { "win_rate": 0.60, "avg_win_R": 1.3, "avg_loss_R": 1.0, "fee_per_trade_R": 0.05, "n_trades": 100 }
+      },
+      "calc_note": "All calculator flags passed on first run.",
+      "mode": "shadow"
+    },
+    {
+      "strategy_id": "volatility-expansion-continuation-v1",
+      "setup_class": "volatility_expansion",
+      "instrument_class": "fx_major",
+      "side": "long",
+      "entry_rule": "Post-consolidation range expansion: enter on a decisive breakout bar closing beyond the compressed range with rising true range.",
+      "exit_rule": "Target 2.5R measured-move; stop at the opposite side of the expansion bar.",
+      "invalidation": "Price re-enters the consolidation range, or the expansion bar's extreme is retraced within 1 session.",
+      "regime_fit": ["RISK_ON", "VOLATILITY_EXPANSION"],
+      "illustrative_prices": { "entry": 1.0850, "stop": 1.0820, "target": 1.0925, "lot_step": 1000 },
+      "computed": {
+        "rr_ratio": "2.50", "rr_passed": true,
+        "position_size_qty": "83000", "risk_amount": "250.00", "size_passed": true,
+        "expectancy_R": "0.4800", "expectancy_passed": true,
+        "expectancy_inputs": { "win_rate": 0.40, "avg_win_R": 2.8, "avg_loss_R": 1.0, "fee_per_trade_R": 0.04, "n_trades": 100 }
+      },
+      "calc_note": "All calculator flags passed on first run.",
+      "mode": "shadow"
+    }
+  ],
+  "journal_schema": {
+    "doc": "QUANT-JOURNAL-SCHEMA.md v1.0 (RATIFIED Architect 2026-07-04)",
+    "note": "Every entry/skip/exit writes a gateway entry. Skips and losses mandatory. mode always 'shadow' while LIVE_MODE=False.",
+    "fields": [
+      "entry_id", "filed_utc", "decision_type(entry|skip|exit)", "thesis", "setup_class",
+      "rr_at_entry(iff entry)", "invalidation", "outcome(iff exit)", "post_decision_market_action",
+      "regime_tag", "mode(shadow)", "instrument_class"
+    ],
+    "forbidden_fields": ["live_position_id", "api_key", "api_secret", "real_account_id", "execution_timestamp_real"]
+  }
+}

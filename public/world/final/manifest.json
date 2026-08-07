@@ -1,0 +1,44 @@
+{
+  "tier": "final",
+  "fps": 24,
+  "size": [
+    1280,
+    854
+  ],
+  "scenes": [
+    {
+      "id": "01-the-bench",
+      "src": "/world/final/01-the-bench.mp4",
+      "poster": "/world/final/01-the-bench.jpg",
+      "frames": 72,
+      "seconds": 3.0,
+      "scroll": 1.0,
+      "label": "The bench",
+      "bytes": 7468975
+    },
+    {
+      "id": "02-through-the-window",
+      "src": "/world/final/02-through-the-window.mp4",
+      "poster": "/world/final/02-through-the-window.jpg",
+      "frames": 84,
+      "seconds": 3.5,
+      "scroll": 1.2,
+      "label": "Through the window",
+      "bytes": 9005028,
+      "seam": 1.0,
+      "seam_verdict": "PASS"
+    },
+    {
+      "id": "03-scroll-city",
+      "src": "/world/final/03-scroll-city.mp4",
+      "poster": "/world/final/03-scroll-city.jpg",
+      "frames": 72,
+      "seconds": 3.0,
+      "scroll": 1.0,
+      "label": "Scroll City",
+      "bytes": 6040488,
+      "seam": 1.0,
+      "seam_verdict": "PASS"
+    }
+  ]
+}

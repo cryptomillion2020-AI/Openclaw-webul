@@ -1,0 +1,122 @@
+/**
+ * dashboard-room.css — Command Central deltas on top of workshop-room.css.
+ *
+ * Authority: Architect approval 2026-08-04 of the Bridge Workshop emulation
+ * (WEBUI-BRIDGE-WORKSHOP-EMULATION-20260804T213000Z). The room itself lives in
+ * workshop-room.css; this file adds only what Command Central needs and the
+ * shared layer does not already carry.
+ *
+ * Standing rule, unchanged: material is applied to the ROOM. It never touches a
+ * value. Nothing here styles a number.
+ */
+
+/* ── Extra row states ────────────────────────────────────────────
+   The shared layer ships pass / fail / active / unknown. Command Central also
+   needs "assigned" (station lit, not in motion) and "sealed" (correct-by-design
+   quiet — VAULT, standing holds). Sealed must never read as a fault. */
+.wsroom-row[data-state="assigned"] .wsroom-row-mark { background: var(--status-work-assigned); }
+.wsroom-row[data-state="sealed"]   .wsroom-row-mark { background: var(--status-vault); }
+
+/* Waiting time is the one figure on this page allowed to sting. It is amber
+   because it is overdue, not for decoration. */
+.cc-wait { color: var(--route-amber); }
+
+/* Nothing awaiting the Architect is a GOOD state. The shared layer's `is-held`
+   modifier is red because on Markets it means a gate is unmet — here it would
+   flag an empty desk as a fault. It reads quiet instead.
+   Also set in the display face: the mono zero carries a centre dot, and at this
+   size that reads as a glyph error rather than a number — on the single most
+   important state this page reports. */
+.wsroom-standing-value.cc-clear {
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-style: italic;
+  text-shadow: none;
+}
+
+/* ── Control rail ────────────────────────────────────────────────
+   The kill switch and Mode 3 gate keep their existing confirm logic untouched —
+   they are safety controls and a restyle is not the moment to rewrite their
+   flows. Only the surface is brought into the room: brass strip, square edges.
+   The `!important` is load-bearing because ControlsCluster styles its buttons
+   inline; drop it and the pills come back. */
+.cc-controls {
+  display: flex;
+  align-items: stretch;
+  margin: 0 48px;
+  padding: 0 18px;
+  border: 1px solid rgba(184, 149, 85, 0.26);
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(38, 26, 16, 0.88), rgba(16, 12, 8, 0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(232, 180, 92, 0.20),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.55),
+    0 10px 26px rgba(0, 0, 0, 0.55);
+}
+
+.cc-controls-label {
+  display: flex;
+  align-items: center;
+  padding-right: 22px;
+  margin-right: 22px;
+  border-right: 1px solid rgba(184, 149, 85, 0.20);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #B89555;
+}
+
+/* ControlsCluster prefixes each button with a decorative emoji span. The room
+   carries the atmosphere; the controls do not need icons, and the glyphs also
+   box as Ø in the capture environment, which would make an approval rendering
+   misrepresent the shipped page. Labelled buttons drop the glyph; the icon-only
+   mute toggle keeps its button and gets a word. Presentation only — no handler
+   is touched. */
+.cc-controls button:has(span + span) span:first-child { display: none; }
+.cc-controls button:not(:has(span + span)) span { font-size: 0; }
+.cc-controls button:not(:has(span + span))::after { content: 'Sound'; }
+
+.cc-controls button {
+  margin: 9px 0;
+  border-radius: 0 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  font-family: var(--font-mono) !important;
+  font-size: var(--size-micro) !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border: 1px solid rgba(184, 149, 85, 0.30) !important;
+  padding: 8px 16px !important;
+}
+
+/* ── The bench ───────────────────────────────────────────────────
+   Fourteen agents in the glazed case, brass mullions between cells. */
+.cc-bench {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid rgba(116, 199, 195, 0.22);
+}
+
+.cc-bench-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(116, 199, 195, 0.14);
+  border-right: 1px solid rgba(116, 199, 195, 0.12);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+}
+
+.cc-bench-cell:nth-child(7n) { border-right: 0; }
+.cc-bench-mark  { width: 6px; height: 6px; flex: none; }
+.cc-bench-name  { color: var(--text-primary); letter-spacing: 0.06em; }
+.cc-bench-state { margin-left: auto; color: var(--text-tertiary); font-size: var(--size-micro); }
+
+@media (max-width: 1100px) {
+  .cc-controls { margin: 0 20px; }
+  .cc-bench { grid-template-columns: repeat(3, 1fr); }
+  .cc-bench-cell:nth-child(7n) { border-right: 1px solid rgba(116, 199, 195, 0.12); }
+  .cc-bench-cell:nth-child(3n) { border-right: 0; }
+}

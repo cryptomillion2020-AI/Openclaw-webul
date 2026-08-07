@@ -36,7 +36,8 @@ import './App.css';
 // Channels the dashboard subscribes to on connect
 export const SUBSCRIBE_CHANNELS = [
   'full_state', 'active_projects_delta', 'task_update', 'kill_switch_update',
-  'bus_activity_delta', 'comms_delta', 'research_delta', 'market_context_update',
+  'bus_activity_delta', 'comms_delta', 'research_delta', 'research_result',
+  'research_result_blocked', 'market_context_update',
   'comms_anomaly', 'idle_tick', 'city_state',
 ];
 
@@ -180,6 +181,14 @@ export default function App() {
         setCityState(msg.city_state);
         markMessage('city_state');
       }
+      // A1: seed the Market Context snapshot on connect so Markets/Trading/
+      // Dashboard render live feed data immediately, without waiting for the
+      // next mtime-triggered market_context_update. Absent/null → panels stay
+      // empty and self-describe (no mock substitution).
+      if (msg.market_context) {
+        setMarketContext(msg.market_context);
+        markMessage('market_context');
+      }
       // Wave 4c: seed per-channel Comms scrollback so the AgentComms page
       // renders historical messages immediately on connect.
       if (msg.comms_history && typeof msg.comms_history === 'object') {
@@ -286,7 +295,7 @@ export default function App() {
         });
       }
     } else if (msg.type === 'research_delta') {
-      // Immediate Research query broadcast (includes full text)
+      // Immediate Research query broadcast (includes full text) — A4 intake stage
       const event = {
         file:    msg.file,
         dir:     msg.dir,
@@ -296,9 +305,34 @@ export default function App() {
         preview: msg.text,
         routing: msg.routing,
         selected_agents: msg.selected_agents,
+        query_id: msg.query_id,
+        stage:    msg.stage || 'dispatched',
+        dedup:    msg.dedup || null,
       };
       setBusActivity(prev => {
         if (prev.some(e => e.file === msg.file && e.dir === msg.dir)) return prev;
+        return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
+      });
+    } else if (msg.type === 'research_result' || msg.type === 'research_result_blocked') {
+      // A4 result-return stage: citation-bearing result, or a citation-gate block.
+      // No-citation replies withheld here render as blocked, never as a claim.
+      soundManager.play('bus-message');
+      const event = {
+        file:    msg.file,
+        dir:     msg.dir,
+        from:    msg.from || 'UNKNOWN',
+        mtime:   msg.mtime || (Date.parse(msg.ts) / 1000),
+        ts:      msg.ts,
+        preview: msg.preview || '',
+        query_id: msg.query_id,
+        stage:    msg.stage,
+        sources:  msg.sources || [],
+        artifact_path: msg.artifact_path || null,
+        reason:   msg.reason || null,
+        resultType: msg.type,
+      };
+      setBusActivity(prev => {
+        if (prev.some(e => e.query_id === msg.query_id && e.stage === msg.stage)) return prev;
         return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
     } else if (msg.type === 'market_context_update') {
@@ -386,13 +420,13 @@ export default function App() {
       case 'dashboard': return <Bridge {...pageProps} />;
       case 'bridge':    return <Bridge {...pageProps} />;
       case 'comms':     return <Network busActivity={busActivity} onSend={send} commsAnomaly={commsAnomaly} feedHealth={feedHealth} />;
-      case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} feedHealth={feedHealth} />;
+      case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} mode3={mode3Conditions} feedHealth={feedHealth} />;
       case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} cityState={cityState} feedHealth={feedHealth} />;
       case 'vault':     return <Vault busActivity={busActivity} />;
       case 'research':  return <Lab busActivity={busActivity} />;
       // Legacy pages reachable via explicit query param ?page=*-legacy
       case 'comms-legacy':    return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
-      case 'trading-legacy':  return <Trading {...pageProps} />;
+      case 'trading-legacy':  return <Trading {...pageProps} marketContext={marketContext} />;
       case 'vault-legacy':    return <PrivateVault />;
       case 'research-legacy': return <TeamResearch onSend={send} busActivity={busActivity} connected={connected} />;
       default:                return <Dashboard {...pageProps} />;

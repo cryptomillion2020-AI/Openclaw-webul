@@ -1,0 +1,107 @@
+/**
+ * scroll-world.css — the scroll-bound stage.
+ * Clean-room. Material is applied to the WORLD; overlaid copy sits on it, never
+ * inside it, and gets its own ground so it is never read against a lit figure.
+ */
+.sw { position: relative; width: 100%; background: #0A0806; }
+
+.sw-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sw-scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+/* Only the active scene is visible. The seam is a crossfade between two frames
+   that are already identical by construction, so it reads as continuous motion
+   rather than a cut. */
+.sw-scene[data-active] { opacity: 1; }
+
+.sw-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.sw-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%,
+    transparent 0%, rgba(6,4,3,0.34) 62%, rgba(6,4,3,0.82) 100%);
+}
+
+.sw-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 48px 92px;
+  pointer-events: none;
+}
+.sw-overlay > * { pointer-events: auto; }
+
+/* Copy needs ground. Without it a headline can land on a lit face. */
+.sw-overlay::before {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 0; height: 62%;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(10,8,6,0.72) 52%, rgba(10,8,6,0.95) 100%);
+}
+.sw-overlay > * { position: relative; z-index: 1; }
+
+.sw-marks {
+  position: absolute; left: 48px; bottom: 34px;
+  display: flex; gap: 0;
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sw-mark {
+  padding: 8px 18px 8px 0;
+  margin-right: 18px;
+  border-right: 1px solid rgba(184,149,85,0.26);
+  color: #8E8168;
+  transition: color 220ms ease;
+}
+.sw-mark:last-child { border-right: 0; margin-right: 0; }
+.sw-mark[data-active] { color: #E8B45C; }
+
+.sw-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 60px;
+  line-height: 1.0;
+  letter-spacing: -0.015em;
+  color: #F2EADC;
+  margin: 0 0 10px;
+  text-shadow: 0 2px 26px rgba(0,0,0,0.9), 0 0 60px rgba(232,180,92,0.14);
+  max-width: 18ch;
+}
+
+.sw-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #B89555;
+  margin-bottom: 12px;
+}
+
+.sw-empty {
+  padding: 40px 48px;
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  color: #A0927C;
+}
+.sw-empty strong {
+  display: block; color: #9E907B; letter-spacing: 0.12em;
+  text-transform: uppercase; font-size: var(--size-micro); margin-bottom: 6px;
+}
+
+@media (max-width: 1100px) {
+  .sw-overlay { padding: 0 20px 84px; }
+  .sw-marks { left: 20px; }
+  .sw-title { font-size: 34px; }
+}

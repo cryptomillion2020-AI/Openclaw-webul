@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCityData } from '../hooks/useCityData';
 import { getAgentRuntime, AGENT_RUNTIME_SOURCE } from '../lib/agent-runtime';
 import { isCompleteTask, isCurrentlyActiveTask } from '../lib/task-helpers';
-import './AiCityPage.css';
+import { WorkshopFloor } from '../world/WorkshopFloor';
+import './aicity-stations.css';
 
 const MAKERS = [
   { id: 'overseer', name: 'OVERSEER', color: '#E8B45C' },
@@ -20,10 +21,17 @@ const MAKERS = [
 ];
 
 const FLEET = [
-  { id: 'sevin', name: 'SEVIN' },
+  { id: 'sevin', name: 'SEVIN', color: '#EDBD70' },
   ...MAKERS,
-  { id: 'vault', name: 'VAULT' },
+  { id: 'vault', name: 'VAULT', color: '#8A806F', sealed: true },
 ];
+
+/* Approved Pass-3 station art, one plate bay per agent.
+   Source: AICITY-PASS3-20260803T151124Z, Architect-approved 2026-08-03.
+   These renderings ARE the makers — nothing here is drawn that was rendered. */
+const STATION_ART = Object.fromEntries(
+  FLEET.map(a => [a.id, `/ai-city/stations/${a.id}.png`]),
+);
 
 const VALID_STATES = new Set(['live', 'static', 'absent']);
 const VALID_CYCLES = new Set(['day', 'night']);
@@ -123,7 +131,25 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
     };
   }), [taskByAgent]);
 
-  const selected = makers.find(maker => maker.id === selectedId) || null;
+  const stations = useMemo(() => FLEET.map((agent, index) => {
+    const task = taskByAgent.get(agent.id) || null;
+    const runtime = getAgentRuntime(agent.id);
+    return {
+      ...agent,
+      index,
+      task,
+      title: taskTitle(task),
+      progress: taskProgress(task),
+      /* VAULT is air-gapped: it reports nothing by design, so its state is
+         asserted as sealed rather than derived from an absence of evidence. */
+      state: agent.sealed ? 'sealed' : taskState(task),
+      runtime: runtime?.runtime || null,
+      model: runtime?.model || null,
+      shortModel: runtime?.shortModel || null,
+    };
+  }), [taskByAgent]);
+
+  const selected = stations.find(s => s.id === selectedId) || null;
   const counts = useMemo(() => FLEET.reduce((summary, agent) => {
     const state = taskState(taskByAgent.get(agent.id));
     if (state === 'complete') summary.complete += 1;
@@ -156,119 +182,151 @@ export default function AiCityPage({ tasks = [], activeTasks = [], busActivity =
     window.history.replaceState(null, '', url);
   };
 
+
+  const cityFeed = feedHealth?.city_state?.state || 'DEAD';
+
   return (
     <section
-      className={`aicity-district-page cycle-${cycle}`}
+      className="city"
+      data-cycle={cycle}
       data-fleet-state={fleetState}
       data-runtime-source={AGENT_RUNTIME_SOURCE.path}
       data-runtime-sha256={AGENT_RUNTIME_SOURCE.sha256}
       data-testid="aicity-district-page"
-      data-city-feed-state={feedHealth?.city_state?.state || 'DEAD'}
+      data-city-feed-state={cityFeed}
     >
-      <header className="aicity-district-header">
-        <div className="aicity-title-block">
-          <span className="aicity-eyebrow">Fleet · the long bench</span>
-          <h1>The <em>Workshop</em></h1>
-          <p>One bench, lit from above. Each maker holds a live piece of work. Finished work stays visible on the shelf.</p>
-          <p data-testid="city-feed-health">
-            AI-City state · {feedHealth?.city_state?.state || 'DEAD'} · {
-              feedHealth?.city_state?.lastMessageAt
-                ? `last message ${new Date(feedHealth.city_state.lastMessageAt).toLocaleTimeString()}`
-                : 'no message received'
-            }
-          </p>
+      <header className="city-masthead">
+        <div>
+          <div className="city-eyebrow">Master Workflow · AI-City</div>
+          <h1 className="city-title">The workshop,<br />from the street.</h1>
         </div>
-        <div className="aicity-controls">
-          <div className="aicity-cycle" role="group" aria-label="Day and night cycle">
-            {['day', 'night'].map(value => (
-              <button key={value} type="button" data-set-cycle={value} aria-pressed={cycle === value} onClick={() => setCycle(value)}>{value}</button>
-            ))}
-          </div>
-          <div className="aicity-state-switch" role="group" aria-label="Fleet state">
-            {['live', 'static', 'absent'].map(value => (
-              <button key={value} type="button" data-set-state={value} aria-pressed={fleetState === value} onClick={() => setFleetState(value)}>{value}</button>
-            ))}
-          </div>
+        <div className="city-standing">
+          <div className="city-standing-value">{counts.active}</div>
+          <div className="city-standing-label">hands moving</div>
         </div>
       </header>
 
-      <dl className="aicity-eph" aria-label="Workshop totals">
-        <div><dt>At the bench</dt><dd>{FLEET.length}</dd></div>
-        <div><dt>Hands moving</dt><dd className="warm">{counts.active}</dd></div>
-        <div><dt>On the shelf</dt><dd className="good">{counts.complete}</dd></div>
-        <div><dt>Lamp lit, no maker</dt><dd className="bad">{fleetState === 'absent' ? makers.length : 1}</dd></div>
-        <div><dt>Fleet link</dt><dd className={connected ? 'good' : ''}>{connected ? 'LIVE' : 'UNAVAILABLE'}</dd></div>
-      </dl>
-
-      <main className="aicity-workshop" aria-label="AI-City workshop bench">
-        <div className="aicity-rafters" aria-hidden="true" />
-        <div className="aicity-dust" aria-hidden="true" />
-        <div className="aicity-bench" aria-hidden="true" />
-
-        <div className="aicity-stations" data-testid="district-map">
-          {makers.map(maker => (
-            <button
-              className={`district-card station-${maker.state}${maker.silent ? ' silent' : ''}${selectedId === maker.id ? ' selected' : ''}`}
-              key={maker.id}
-              type="button"
-              data-agent={maker.id}
-              data-task={maker.title || ''}
-              data-progress={maker.progress == null ? '' : maker.progress}
-              data-substrate={maker.runtime || ''}
-              data-model={maker.model || ''}
-              data-status={maker.state}
-              style={{ '--agent': maker.color, '--station': maker.index, '--pct': maker.progress ?? 0 }}
-              onClick={() => setSelectedId(maker.id)}
-              aria-label={`Open ${maker.name} station; ${stateLabel(maker.state)}`}
-            >
-              <span className="workshop-cord" aria-hidden="true" />
-              <span className="workshop-lamp" aria-hidden="true" />
-              <span className="workshop-light" aria-hidden="true" />
-              <span className="district-head">
-                <span className="agent-name">{maker.name}</span>
-                <span className="silent-wave" aria-label="activity signal; no visible maker"><i /><i /><i /></span>
-              </span>
-              <span className="workshop-shelf" aria-hidden="true">
-                {Array.from({ length: maker.state === 'complete' ? 4 : maker.state === 'active' ? 2 : 1 }, (_, item) => <i key={item} />)}
-              </span>
-              <span className="workshop-maker standee" aria-label={`${maker.name} maker`}><i className="head" /><i className="body" /><i className="arm arm-left" /><i className="arm arm-right" /></span>
-              <span className="workshop-piece" aria-hidden="true"><i /></span>
-              <span className="district-task">{maker.title || 'No active task'}</span>
-              <span className="absence-note">lamp lit · work retained</span>
-            </button>
+      <div className="city-rail">
+        <div className="city-rail-item" data-state={connected ? 'LIVE' : 'DEAD'}>
+          <span className="city-rail-dot" />
+          <span className="city-rail-name">fleet link</span>
+          <span className="city-rail-state">{connected ? 'LIVE' : 'UNAVAILABLE'}</span>
+        </div>
+        {/* The city feed names itself when dark. A bench rendered from stale
+            city_state would be a picture of a fleet that is not there. */}
+        <div className="city-rail-item" data-state={cityFeed} data-testid="city-feed-health">
+          <span className="city-rail-dot" />
+          <span className="city-rail-name">city state</span>
+          <span className="city-rail-state">{cityFeed}</span>
+          <span className="city-rail-age">
+            {feedHealth?.city_state?.lastMessageAt
+              ? `${new Date(feedHealth.city_state.lastMessageAt).toLocaleTimeString()}`
+              : 'no message received'}
+          </span>
+        </div>
+        <div className="city-rail-item" data-state="LIVE">
+          <span className="city-rail-dot" />
+          <span className="city-rail-name">on the shelf</span>
+          <span className="city-rail-state">{counts.complete}</span>
+        </div>
+        <div className="city-switch" role="group" aria-label="Day and night cycle">
+          {['day', 'night'].map(value => (
+            <button key={value} type="button" data-set-cycle={value}
+                    aria-pressed={cycle === value} onClick={() => setCycle(value)}>{value}</button>
           ))}
         </div>
-
-        <div className="aicity-sevin" aria-label="SEVIN walks the bench"><i className="sevin-head" /><i className="sevin-body" /><strong>S E V I N</strong><span>walks the bench</span></div>
-        <div className="aicity-vault"><strong>VAULT</strong><span>back room · sealed</span></div>
-
-        <div className="aicity-feed" aria-label="Operational feed">
-          <h2>Bench notes</h2>
-          {feed.length === 0
-            ? <div className="aicity-empty-feed"><strong>No live events available</strong><span>Bench notes appear when the fleet link returns data.</span></div>
-            : feed.map((event, index) => <article key={`${event.file || event.id || 'event'}-${index}`}><time>{formatTime(event.ts || (event.mtime ? event.mtime * 1000 : null))}</time><strong>{event.from || 'Fleet event'}</strong><p>{event.preview || event.body || 'Event details unavailable.'}</p></article>)}
+        <div className="city-switch" role="group" aria-label="Fleet state">
+          {['live', 'static', 'absent'].map(value => (
+            <button key={value} type="button" data-set-state={value}
+                    aria-pressed={fleetState === value} onClick={() => setFleetState(value)}>{value}</button>
+          ))}
         </div>
-      </main>
+      </div>
+
+      {/* The floor. Replaces the static bench grid: same approved plates, same
+          live state, but standing in the room rather than laid out on a shelf.
+          Motion here is bound to real bus traffic and real task progress —
+          see WorkshopFloor.jsx for the honesty contract. */}
+      <WorkshopFloor
+        stations={stations}
+        busActivity={cityData.busActivity || busActivity}
+        cycle={cycle}
+        connected={connected}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
+
+      {/* Machine-readable bench, retained for the acceptance capture and for
+          assistive tech: the floor is a scene, this is the record. */}
+      <ul className="city-bench-record" data-testid="district-map">
+        {stations.map(s => (
+          <li
+            key={s.id}
+            data-agent={s.id}
+            data-task={s.title || ''}
+            data-progress={s.progress == null ? '' : s.progress}
+            data-substrate={s.runtime || ''}
+            data-model={s.model || ''}
+            data-status={s.state}
+            data-state={s.state}
+            data-sealed={s.sealed || undefined}
+          >
+            {s.name} — {s.sealed ? 'sealed · back room' : stateLabel(s.state)}
+          </li>
+        ))}
+      </ul>
+
+      <div className="city-notes">
+        <div className="city-notes-head">
+          <span>Bench notes</span>
+          <span>{feed.length}</span>
+        </div>
+        {feed.length === 0 ? (
+          <div className="city-empty">
+            <strong>No live events available</strong>
+            Bench notes appear when the fleet link returns data. Nothing is being substituted here.
+          </div>
+        ) : feed.map((event, i) => (
+          <div className="city-note" key={`${event.file || event.id || 'event'}-${i}`}>
+            <time>{formatTime(event.ts || (event.mtime ? event.mtime * 1000 : null))}</time>
+            <span>
+              <strong>{event.from || 'Fleet event'}</strong>{' '}
+              {event.preview || event.body || 'Event details unavailable.'}
+            </span>
+          </div>
+        ))}
+      </div>
 
       {selected && (
-        <aside className="aicity-inspector on" aria-label="Selected maker inspector">
-          <button className="aicity-inspector-close" type="button" onClick={() => setSelectedId(null)} aria-label="Close maker inspector">×</button>
-          <div className="aicity-inspect-title"><h2>{selected.name}</h2><span>{stateLabel(selected.state)}</span></div>
-          <p className={selected.title ? '' : 'empty'}>{selected.title || 'No active task reported'}</p>
-          <dl className="aicity-inspect-meta">
+        <aside className="city-inspector" aria-label="Selected maker inspector">
+          <button className="city-inspector-close" type="button"
+                  onClick={() => setSelectedId(null)} aria-label="Close maker inspector">×</button>
+          <img className="city-inspector-art" src={STATION_ART[selected.id]} alt={`${selected.name} at their station`} />
+          <h2>{selected.name}</h2>
+          <div className="city-inspector-state">{stateLabel(selected.state)}</div>
+          <p className={`city-inspector-task${selected.title ? '' : ' empty'}`}>
+            {selected.title || 'No active task reported'}
+          </p>
+          <dl className="city-inspector-meta">
             <div><dt>Runtime</dt><dd>{selected.runtime || 'Unavailable'}</dd></div>
             <div><dt>Model</dt><dd>{selected.shortModel || 'Unavailable'}</dd></div>
             <div><dt>Piece in hand</dt><dd>{selected.progress == null ? 'Unavailable' : `${selected.progress}%`}</dd></div>
             <div><dt>On the shelf</dt><dd>{selected.state === 'complete' ? 'Complete' : 'In progress'}</dd></div>
           </dl>
-          <div className="aicity-inspect-bar"><i style={{ width: `${selected.progress ?? 0}%` }} /></div>
-          {selected.silent && <div id="silent-contract" className="silent-contract"><strong>Silent-spawn preserved.</strong><br />The lamp and work remain visible without rendering a maker.</div>}
+          {selected.silent && (
+            <div id="silent-contract" className="city-empty" style={{ marginTop: 18 }}>
+              <strong>Silent-spawn preserved</strong>
+              The lamp and the work remain visible without rendering a maker.
+            </div>
+          )}
           <small>Runtime source · openclaw.json · {AGENT_RUNTIME_SOURCE.sha256.slice(0, 12)}</small>
         </aside>
       )}
 
-      <div className="aicity-hint"><b>click</b> a maker to open · <b>esc</b> to release</div>
-      <div className="aicity-tag">DIRECTION V · THE WORKSHOP</div>
+      <div className="city-colophon">
+        <span>Workshop canon · Pass 3 station art</span>
+        <span>Empty means empty</span>
+      </div>
     </section>
   );
 }
