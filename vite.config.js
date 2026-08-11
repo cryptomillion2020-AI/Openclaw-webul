@@ -1,13 +1,20 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
-const OPENCLAW_CONFIG = '/home/k/.openclaw/openclaw.json';
+const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG || '/home/k/.openclaw/openclaw.json';
 const AGENT_RUNTIME_ID = 'virtual:openclaw-agent-runtime';
 const RESOLVED_AGENT_RUNTIME_ID = `\0${AGENT_RUNTIME_ID}`;
 
 function readAgentRuntime() {
+  if (!existsSync(OPENCLAW_CONFIG)) {
+    return {
+      profiles: [],
+      source: 'unavailable-in-cloud-build',
+      sourceSha256: 'unavailable',
+    };
+  }
   const raw = readFileSync(OPENCLAW_CONFIG, 'utf8');
   const config = JSON.parse(raw);
   const profiles = (config?.agents?.list || []).map(agent => ({
@@ -31,7 +38,7 @@ function agentRuntimePlugin() {
     },
     load(id) {
       if (id !== RESOLVED_AGENT_RUNTIME_ID) return null;
-      this.addWatchFile(OPENCLAW_CONFIG);
+      if (existsSync(OPENCLAW_CONFIG)) this.addWatchFile(OPENCLAW_CONFIG);
       return `export default ${JSON.stringify(readAgentRuntime())};`;
     },
   };
