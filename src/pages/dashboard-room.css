@@ -21,6 +21,102 @@
    because it is overdue, not for decoration. */
 .cc-wait { color: var(--route-amber); }
 
+/* ── Command desk ───────────────────────────────────────────────
+   The desk already owns the page's only emphasis. The command form lives
+   inside that station so action does not create a second visual hierarchy. */
+.cc-command-desk {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(184, 149, 85, 0.22);
+}
+
+.cc-command-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cc-command-copy strong {
+  color: var(--text-primary);
+  font-size: var(--size-label);
+}
+
+.cc-command-copy span,
+.cc-command-transport,
+.cc-command-error {
+  color: var(--text-tertiary);
+  font-size: var(--size-caption);
+}
+
+.cc-command-form {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.cc-command-form label { display: grid; gap: 6px; }
+.cc-command-form label > span {
+  color: #B89555;
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cc-command-form select,
+.cc-command-form textarea {
+  width: 100%;
+  border: 1px solid rgba(184, 149, 85, 0.28);
+  border-radius: 2px;
+  background: rgba(10, 8, 6, 0.72);
+  color: var(--text-primary);
+  font: inherit;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.cc-command-form select:focus,
+.cc-command-form textarea:focus { border-color: rgba(232, 180, 92, 0.55); }
+.cc-command-form textarea { resize: vertical; min-height: 64px; }
+
+.cc-command-form button {
+  min-height: 64px;
+  padding: 0 18px;
+  border: 1px solid rgba(232, 180, 92, 0.55);
+  border-radius: 0;
+  background: rgba(10, 8, 6, 0.72);
+  color: var(--route-amber);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cc-command-form button:disabled { opacity: 0.42; cursor: not-allowed; }
+.cc-command-transport { margin-top: 9px; }
+.cc-command-transport[data-connected] { color: var(--text-secondary); }
+.cc-command-error { margin-top: 9px; color: var(--status-error); }
+
+.cc-command-ledger { margin-top: 12px; }
+.cc-command-entry {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(237, 228, 214, 0.08);
+  font-size: var(--size-caption);
+}
+.cc-command-entry > span {
+  color: #B89555;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+.cc-command-entry > strong { color: var(--text-primary); font-weight: 500; }
+.cc-command-entry > em { color: var(--text-tertiary); font-style: normal; text-align: right; }
+
 /* Nothing awaiting the Architect is a GOOD state. The shared layer's `is-held`
    modifier is red because on Markets it means a gate is unmet — here it would
    flag an empty desk as a fault. It reads quiet instead.
@@ -115,6 +211,10 @@
 .cc-bench-state { margin-left: auto; color: var(--text-tertiary); font-size: var(--size-micro); }
 
 @media (max-width: 1100px) {
+  .cc-command-form { grid-template-columns: 1fr; }
+  .cc-command-form button { min-height: 44px; }
+  .cc-command-entry { grid-template-columns: 1fr; gap: 4px; }
+  .cc-command-entry > em { text-align: left; }
   .cc-controls { margin: 0 20px; }
   .cc-bench { grid-template-columns: repeat(3, 1fr); }
   .cc-bench-cell:nth-child(7n) { border-right: 1px solid rgba(116, 199, 195, 0.12); }

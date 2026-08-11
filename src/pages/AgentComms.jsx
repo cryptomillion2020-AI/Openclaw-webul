@@ -49,6 +49,7 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
   const [activeChannel, setActiveChannel] = useState('status');
   const [query, setQuery] = useState('');
   const [inputText, setInputText] = useState('');
+  const [sendNotice, setSendNotice] = useState('');
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -62,6 +63,9 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
     body:    e.preview || '(no content)',
     mtime:   e.mtime || 0,
     pending: !!e.pending,
+    deliveryState: e.deliveryState || (e.pending ? 'queued' : (
+      e.from === 'WEBUI' || String(e.dir || '').startsWith('webui-to-') ? 'written' : 'received'
+    )),
   }));
 
   useEffect(() => {
@@ -76,8 +80,13 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
        nothing left the machine. */
     if (!connected) return;
     const clientMessageId = makeClientMessageId();
+    const accepted = onSend?.({ type: 'comms_message', channel: activeChannel, body: trimmed, clientMessageId });
+    if (accepted === false) {
+      setSendNotice('The transport dropped before the frame left this page. Your message is still in the composer.');
+      return;
+    }
     addLocalEcho?.(activeChannel, trimmed, clientMessageId);
-    onSend?.({ type: 'comms_message', channel: activeChannel, body: trimmed, clientMessageId });
+    setSendNotice('Queued locally. Waiting for the server to confirm the bus write.');
     setInputText('');
   };
 
@@ -129,6 +138,13 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
           <span className="wsroom-rail-name">channel</span>
           <span className="wsroom-rail-state">{activeChannel}</span>
         </div>
+      </div>
+
+      <div className="ac-transport-notice" data-connected={connected || undefined} role="status">
+        <strong>{connected ? 'Transport connected.' : 'Transport disconnected.'}</strong>
+        {connected
+          ? ' A server confirmation proves the message was written to the bus. It does not prove an agent woke or read it.'
+          : ' Sending is held and the composer keeps your text until the connection returns.'}
       </div>
 
       <div className="ac-floor">
@@ -190,13 +206,21 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
                   : 'The transport is down — this is not a claim that the channel is quiet.'}
               </div>
             ) : messages.map((m, i) => (
-              <article className="ac-msg" data-pending={m.pending || undefined} key={m.file || i}>
+              <article
+                className="ac-msg"
+                data-pending={m.pending || undefined}
+                data-direction={m.deliveryState === 'reply' || m.deliveryState === 'received' ? 'inbound' : 'outbound'}
+                key={m.file || i}
+              >
                 <div className="ac-msg-meta">
                   <span className="ac-msg-from">{m.from}</span>
                   {m.ts && <span className="ac-msg-time">{m.ts}</span>}
-                  {/* A pending message has not been acknowledged by the server.
-                      Saying so is the whole point of the local echo. */}
-                  {m.pending && <span className="ac-msg-pending">unconfirmed</span>}
+                  <span className="ac-msg-state" data-state={m.deliveryState}>
+                    {m.deliveryState === 'queued' && 'Queued'}
+                    {m.deliveryState === 'written' && 'Written to bus · agent not woken'}
+                    {m.deliveryState === 'reply' && 'Reply received'}
+                    {m.deliveryState === 'received' && 'Inbound message'}
+                  </span>
                 </div>
                 <div className="ac-msg-body">{m.body}</div>
               </article>
@@ -225,6 +249,7 @@ export function AgentComms({ onSend, connected, commsByChannel = {}, addLocalEch
               Send
             </button>
           </div>
+          {sendNotice && <div className="ac-send-notice" role="status">{sendNotice}</div>}
         </section>
       </div>
 

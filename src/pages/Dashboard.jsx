@@ -26,8 +26,7 @@
  *
  * Every value derives from a live prop. There is no seeded data in this file.
  */
-import { useMemo } from 'react';
-import { MARKET_FEED_INVENTORY } from '../feeds/marketFeeds';
+import { useMemo, useState } from 'react';
 import { ControlsCluster } from '../components/ControlsCluster';
 import './workshop-room.css';
 import './dashboard-room.css';
@@ -45,6 +44,18 @@ const ROSTER = [
 const SEALED = new Set(['VAULT']);
 
 const ACTIVE_WINDOW_S = 15 * 60;
+
+const COMMAND_TARGETS = [
+  ['sevin', 'SEVIN'],
+  ['overseer', 'OVERSEER'],
+  ['elevin', 'ELEVIN'],
+  ['all-agents', 'All routed agents'],
+];
+
+function commandId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `dashboard-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 /* What counts as "blocked on the Architect". One explicit expression rather
    than scattered tests, so the definition can be argued with in one place. */
@@ -99,9 +110,10 @@ function FeedRail({ feedHealth, connected }) {
       }
       const h = feedHealth?.[key];
       if (!h) return { key, label, state: 'UNKNOWN', age: null };
+      if (!h.lastMessageAt) return { key, label, state: 'NO_DATA', age: null };
       return {
         key, label,
-        state: h.state || 'UNKNOWN',
+        state: key === 'market_context' && h.state === 'DEAD' ? 'STALE' : (h.state || 'UNKNOWN'),
         age: h.lastMessageAt ? now - h.lastMessageAt : null,
       };
     });
@@ -114,7 +126,7 @@ function FeedRail({ feedHealth, connected }) {
           <span className="wsroom-rail-dot" />
           <span className="wsroom-rail-name">{f.label}</span>
           <span className="wsroom-rail-state">{f.state.replace('_', ' ')}</span>
-          {f.age != null && <span className="wsroom-rail-age">{ago(f.age)} ago</span>}
+          <span className="wsroom-rail-age">{f.age == null ? 'age unavailable' : `${ago(f.age)} ago`}</span>
         </div>
       ))}
     </div>
@@ -127,6 +139,7 @@ export function Dashboard({
   mode3Enabled,
   onSend,
   busActivity,
+  commsByChannel = {},
   connected,
   oauthStatus,
   tasks,
@@ -134,6 +147,10 @@ export function Dashboard({
   activeTasks = [],
   feedHealth,
 }) {
+  const [commandTarget, setCommandTarget] = useState('sevin');
+  const [commandBody, setCommandBody] = useState('');
+  const [commands, setCommands] = useState([]);
+  const [commandError, setCommandError] = useState('');
   const events   = Array.isArray(busActivity)    ? busActivity    : [];
   const taskList = Array.isArray(tasks)          ? tasks          : [];
   const projects = Array.isArray(activeProjects) ? activeProjects : [];
@@ -151,6 +168,31 @@ export function Dashboard({
 
   const inflight = taskList.filter(t => /progress|active|in_flight/i.test(t.status || ''));
   const stuck    = taskList.filter(t => /blocked/i.test(t.status || '') && !AWAITING.test(t.status || ''));
+
+  const issueCommand = () => {
+    const body = commandBody.trim();
+    if (!connected || !body) return;
+    const clientMessageId = commandId();
+    const submittedAt = Date.now() / 1000;
+    const frame = { type: 'comms_message', channel: commandTarget, body, clientMessageId };
+    if (onSend?.(frame) === false) {
+      setCommandError('The websocket closed before this directive left Command Central. The text is still here.');
+      return;
+    }
+    setCommands(prev => [{ clientMessageId, target: commandTarget, body, submittedAt }, ...prev].slice(0, 8));
+    setCommandBody('');
+    setCommandError('');
+  };
+
+  const commandState = (command) => {
+    const channelEvents = commsByChannel[command.target] || [];
+    const confirmed = channelEvents.some(event => (
+      !event.pending &&
+      (event.clientMessageId === command.clientMessageId || event.preview === command.body) &&
+      (event.mtime || 0) >= command.submittedAt - 1
+    ));
+    return confirmed ? 'Written to bus · agent not woken' : 'Queued · awaiting bus confirmation';
+  };
 
   /* Agent activity derives from observed bus traffic only. An agent that has
      not spoken renders unlit — we do not assert health we cannot see. */
@@ -211,6 +253,50 @@ export function Dashboard({
             <span className="wsroom-station-title">At your desk</span>
             <span className="wsroom-station-count">{desk.length}</span>
           </div>
+          <div className="cc-command-desk">
+            <div className="cc-command-copy">
+              <strong>Issue a directive</strong>
+              <span>Uses the existing validated Agent Comms path. Bus placement does not wake an agent.</span>
+            </div>
+            <div className="cc-command-form">
+              <label>
+                <span>Address</span>
+                <select value={commandTarget} onChange={event => setCommandTarget(event.target.value)}>
+                  {COMMAND_TARGETS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="cc-command-body">
+                <span>Directive</span>
+                <textarea
+                  value={commandBody}
+                  onChange={event => setCommandBody(event.target.value)}
+                  placeholder={connected ? 'State the outcome, boundary, and evidence required…' : 'Transport disconnected — directive held locally.'}
+                  disabled={!connected}
+                  rows={3}
+                />
+              </label>
+              <button type="button" onClick={issueCommand} disabled={!connected || !commandBody.trim()}>
+                Send directive
+              </button>
+            </div>
+            <div className="cc-command-transport" data-connected={connected || undefined} role="status">
+              {connected
+                ? 'Connected · a bus confirmation will appear below. Agent wake remains unauthorized.'
+                : 'Disconnected · no directive can leave this page.'}
+            </div>
+            {commandError && <div className="cc-command-error" role="alert">{commandError}</div>}
+            {commands.length > 0 && (
+              <div className="cc-command-ledger" aria-label="Directive state">
+                {commands.map(command => (
+                  <div className="cc-command-entry" key={command.clientMessageId}>
+                    <span>{command.target}</span>
+                    <strong>{command.body}</strong>
+                    <em>{commandState(command)}</em>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {desk.length === 0 ? (
             <Empty
               what="Nothing awaiting you"
@@ -243,8 +329,6 @@ export function Dashboard({
           <Row state={mode3Enabled ? 'active' : 'sealed'} name="Trading — Mode 3"
                meta={mode3Enabled ? 'ARMED' : 'held · paper'} />
           <Row state="sealed" name="Autonomous spend" meta="zero · standing" />
-          <Row state="active" name="Free market feeds"
-               meta={`${MARKET_FEED_INVENTORY.filter(f => f.tier === 'free' && f.status === 'live').length} live free-tier · 0 metered active · zero spend`} />
           <Row state="sealed" name="VAULT air gap"    meta="sealed · architectural" />
         </section>
 

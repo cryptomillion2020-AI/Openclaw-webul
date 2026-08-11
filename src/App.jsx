@@ -3,7 +3,7 @@
  * Vision UI Dashboard React exact implementation
  *
  * Pages:
- *   1. Dashboard    — Main dashboard (stat cards, agent grid, OAuth table)
+ *   1. Dashboard    — Command Central (Architect decisions and fleet context)
  *   2. Agent Comms  — MS Teams-style channel communication
  *   3. Trading      — Trading platform (4 sub-tabs, fixed ControlsCluster)
  *   4. AI-City      — HARD-BLOCKED (requires COSMOS sprites + SEVIN sign-off)
@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocket }   from './hooks/useWebSocket';
 import { useFeedHealth }  from './hooks/useFeedHealth';
 import { soundManager }    from './lib/soundManager';
+import { normalizeMarketFeed } from './feeds/marketFeeds';
 import { Sidebar }         from './components/Sidebar';
 import { Dashboard }       from './pages/Dashboard';
 import { Bridge }          from './pages/Bridge';
@@ -73,6 +74,8 @@ function dirToCommsChannel(dir) {
 
 // Wave 4b-A: single shape for all comms_delta consumers
 function normalizeCommsDelta(msg) {
+  const outbound = msg.from === 'WEBUI' || String(msg.dir || '').startsWith('webui-to-');
+  const inboundReply = msg.dir === 'agent-comms-out';
   return {
     file:            msg.file,
     dir:             msg.dir,
@@ -83,6 +86,7 @@ function normalizeCommsDelta(msg) {
     channel:         msg.channel || dirToCommsChannel(msg.dir),
     clientMessageId: msg.clientMessageId || null,
     pending:         false,
+    deliveryState:   outbound ? 'written' : inboundReply ? 'reply' : 'received',
   };
 }
 
@@ -336,7 +340,10 @@ export default function App() {
         return [...prev, event].sort((a, b) => a.mtime - b.mtime).slice(-50);
       });
     } else if (msg.type === 'market_context_update') {
-      const cadence = Math.max(1000, Number(msg.context?.freshness_ttl_seconds || 60) * 1000);
+      const reportedInterval = normalizeMarketFeed(msg.context).publishIntervalSeconds;
+      const cadence = reportedInterval == null
+        ? FEEDS.market_context.expectedCadenceMs
+        : Math.max(1000, reportedInterval * 1000);
       setMarketContext(msg.context || null);
       markMessage('market_context', Date.now(), cadence);
     } else if (msg.type === 'comms_anomaly') {
@@ -378,6 +385,7 @@ export default function App() {
       channel,
       clientMessageId,
       pending:         true,
+      deliveryState:   'queued',
     };
     setCommsByChannel(prev => {
       const existing = prev[channel] || [];
@@ -407,19 +415,21 @@ export default function App() {
     mode3Enabled,
     onSend: send,
     busActivity,
+    commsByChannel,
     connected,
     oauthStatus,
     tasks,
     activeProjects,
     activeTasks,
     feedHealth,
+    marketContext,
   };
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard': return <Bridge {...pageProps} />;
+      case 'dashboard': return <Dashboard {...pageProps} />;
       case 'bridge':    return <Bridge {...pageProps} />;
-      case 'comms':     return <Network busActivity={busActivity} onSend={send} commsAnomaly={commsAnomaly} feedHealth={feedHealth} />;
+      case 'comms':     return <AgentComms onSend={send} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
       case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} mode3={mode3Conditions} feedHealth={feedHealth} />;
       case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} cityState={cityState} feedHealth={feedHealth} />;
       case 'vault':     return <Vault busActivity={busActivity} />;

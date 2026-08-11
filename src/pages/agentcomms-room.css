@@ -21,6 +21,19 @@
   align-content: start;
 }
 
+.ac-transport-notice {
+  margin: 16px 48px 0;
+  padding: 10px 14px;
+  border-left: 2px solid var(--status-error);
+  background: rgba(10, 8, 6, 0.58);
+  color: var(--text-secondary);
+  font-size: var(--size-caption);
+  line-height: 1.5;
+}
+
+.ac-transport-notice[data-connected] { border-left-color: var(--status-work-inflight); }
+.ac-transport-notice strong { color: var(--text-primary); margin-right: 6px; }
+
 /* ── Channel rack ────────────────────────────────────────────── */
 .ac-search {
   width: 100%;
@@ -108,6 +121,7 @@
    claiming delivery we have not observed is the failure this echo exists to
    make visible. */
 .ac-msg[data-pending] { opacity: 0.62; border-left-style: dashed; }
+.ac-msg[data-direction="inbound"] { border-left-color: rgba(116, 199, 195, 0.48); }
 
 .ac-msg-meta {
   display: flex;
@@ -123,7 +137,13 @@
 
 .ac-msg-from    { color: #D9B778; }
 .ac-msg-time    { color: var(--text-tertiary); }
-.ac-msg-pending { margin-left: auto; color: var(--status-work-assigned); }
+.ac-msg-state {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+.ac-msg-state[data-state="queued"]  { color: var(--status-work-assigned); }
+.ac-msg-state[data-state="reply"]   { color: var(--status-work-inflight); }
 
 .ac-msg-body {
   font-size: var(--size-label);
@@ -175,7 +195,16 @@
   cursor: not-allowed;
 }
 
+.ac-send-notice {
+  margin-top: 9px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  line-height: 1.5;
+}
+
 @media (max-width: 1100px) {
+  .ac-transport-notice { margin: 14px 20px 0; }
   .ac-floor { grid-template-columns: 1fr; padding: 24px 20px 16px; }
   .ac-thread-station { min-height: 480px; }
 }

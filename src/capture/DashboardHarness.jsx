@@ -6,6 +6,7 @@
  * LAYOUT SPECIMEN for judging density — it is not sample data, it never reaches
  * a shipped page, and Dashboard itself still contains no seeded values.
  */
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Dashboard } from '../pages/Dashboard';
 import '../phase4-tokens.css';
@@ -20,6 +21,7 @@ const QUIET = {
   mode3Enabled: false,
   onSend: () => {},
   busActivity: [],
+  commsByChannel: {},
   tasks: [],
   activeProjects: [],
   activeTasks: [],
@@ -63,10 +65,32 @@ const LOADED = {
     { dir: 'navigator-to-sevin', file: 'e.md', from: 'NAVIGATOR', mtime: now - 3400, preview: 'Memory persistence risk + cost — 98% concurrence' },
     { dir: 'sage-to-overseer',   file: 'f.md', from: 'SAGE',      mtime: now - 7200, preview: 'Nightly harvest complete' },
   ],
+  commsByChannel: {},
 };
 
+function InteractiveDashboard() {
+  const [commsByChannel, setCommsByChannel] = useState({});
+  window.__capturedDashboardFrames = window.__capturedDashboardFrames || [];
+  const onSend = frame => {
+    window.__capturedDashboardFrames.push(frame);
+    setTimeout(() => setCommsByChannel(prev => ({
+      ...prev,
+      [frame.channel]: [{
+        file: 'confirmed.md', dir: `webui-to-${frame.channel}`, from: 'WEBUI',
+        mtime: Date.now() / 1000, ts: new Date().toISOString(), preview: frame.body,
+        clientMessageId: frame.clientMessageId, pending: false, deliveryState: 'written',
+      }],
+    })), 80);
+    return true;
+  };
+  return <Dashboard {...QUIET} connected onSend={onSend} commsByChannel={commsByChannel} />;
+}
+
 const params = new URLSearchParams(location.search);
-const mode = params.get('state') === 'loaded' ? LOADED : QUIET;
+const state = params.get('state');
+const mode = state === 'loaded' ? LOADED : QUIET;
 
 document.documentElement.style.background = '#0B0906';
-createRoot(document.getElementById('root')).render(<Dashboard {...mode} />);
+createRoot(document.getElementById('root')).render(
+  state === 'interactive' ? <InteractiveDashboard /> : <Dashboard {...mode} />
+);
