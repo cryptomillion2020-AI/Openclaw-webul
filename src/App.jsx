@@ -131,13 +131,7 @@ export default function App() {
     return 'dashboard';
   });
   const [killActive,      setKillActive]      = useState(false);
-  const [mode3Conditions, setMode3Conditions] = useState({
-    kill_switch_inactive: false,
-    paper_mode_confirmed: false,
-    stan_audit_passed:    false,
-    quant_proposal_approved: false,
-    architect_authorized: false,
-  });
+  const [mode3Conditions, setMode3Conditions] = useState(null);
   const [mode3Enabled,    setMode3Enabled]    = useState(false);
   const [oauthStatus,     setOauthStatus]     = useState({});
   const [busActivity,     setBusActivity]     = useState([]);
@@ -168,13 +162,7 @@ export default function App() {
 
     if (msg.type === 'full_state') {
       setKillActive(msg.kill_switch || false);
-      setMode3Conditions(msg.mode3_conditions || {
-        kill_switch_inactive: false,
-        paper_mode_confirmed: false,
-        stan_audit_passed:    false,
-        quant_proposal_approved: false,
-        architect_authorized: false,
-      });
+      setMode3Conditions(msg.mode3_conditions ?? null);
       setMode3Enabled(msg.mode3_enabled || false);
       setOauthStatus(msg.oauth_status || {});
       setBusActivity(initialFleetActivity(msg));
@@ -189,10 +177,8 @@ export default function App() {
       // Dashboard render live feed data immediately, without waiting for the
       // next mtime-triggered market_context_update. Absent/null → panels stay
       // empty and self-describe (no mock substitution).
-      if (msg.market_context) {
-        setMarketContext(msg.market_context);
-        markMessage('market_context');
-      }
+      setMarketContext(msg.market_context ?? null);
+      if (msg.market_context) markMessage('market_context');
       // Wave 4c: seed per-channel Comms scrollback so the AgentComms page
       // renders historical messages immediately on connect.
       if (msg.comms_history && typeof msg.comms_history === 'object') {
@@ -357,7 +343,7 @@ export default function App() {
   // ---------------------------------------------------------------------------
   // WebSocket hook
   // ---------------------------------------------------------------------------
-  const { connected, send, reconnectFeed } = useWebSocket({
+  const { connected, send, reconnectFeed, reconnectNow } = useWebSocket({
     onMessage: handleMessage,
     channels: SUBSCRIBE_CHANNELS,
     autoConnect: true,
@@ -430,7 +416,7 @@ export default function App() {
       case 'dashboard': return <Dashboard {...pageProps} />;
       case 'bridge':    return <Bridge {...pageProps} />;
       case 'comms':     return <AgentComms onSend={send} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
-      case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} mode3={mode3Conditions} feedHealth={feedHealth} />;
+      case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} mode3={connected ? mode3Conditions : null} feedHealth={feedHealth} connected={connected} onReconnect={reconnectNow} />;
       case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} cityState={cityState} feedHealth={feedHealth} />;
       case 'vault':     return <Vault busActivity={busActivity} />;
       case 'research':  return <Lab busActivity={busActivity} />;
