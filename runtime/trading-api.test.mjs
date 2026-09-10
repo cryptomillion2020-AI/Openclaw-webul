@@ -63,14 +63,20 @@ test('actual isolated HTTP/WS: GET, preflight, no live route, traversal, relay a
 });
 
 test('CLI invoked through current symlink starts and serves, rather than exiting silently',{timeout:15000},async()=>{
- const {spawn}=await import('node:child_process');const {symlink}=await import('node:fs/promises');const net=await import('node:net');
+ const {spawn}=await import('node:child_process');const {symlink,mkdir,cp}=await import('node:fs/promises');const net=await import('node:net');
  const tmp=await mkdtemp(path.join(os.tmpdir(),'webui-symlink-start-'));
  const repo=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
- await symlink(repo,path.join(tmp,'current'));
+ // T-01: own a known release root; never serve an untracked or unrelated repo/dist.
+ const release=path.join(tmp,'release');await mkdir(path.join(release,'dist'),{recursive:true});
+ const document='<!doctype html><title>isolated CLI dist</title><p>exact test-owned payload</p>';
+ await writeFile(path.join(release,'dist/index.html'),document);
+ await cp(path.join(repo,'runtime'),path.join(release,'runtime'),{recursive:true});
+ await symlink(release,path.join(tmp,'current'));
  const reserve=net.createServer();reserve.listen(0,'127.0.0.1');await once(reserve,'listening');const port=reserve.address().port;await new Promise(r=>reserve.close(r));
  const child=spawn(process.execPath,[path.join(tmp,'current/runtime/serve-trading.mjs'),'--host','127.0.0.1','--port',String(port)],{cwd:tmp,stdio:['ignore','pipe','pipe']});
  try{
   await new Promise((resolve,reject)=>{child.stdout.once('data',()=>resolve());child.once('exit',code=>reject(Error('early_exit:'+code)));child.once('error',reject);});
-  assert.equal((await fetch(`http://127.0.0.1:${port}/`)).status,200);
+  const response=await fetch(`http://127.0.0.1:${port}/`);assert.equal(response.status,200);
+  assert.equal(await response.text(),document);
  }finally{child.kill('SIGTERM');await once(child,'exit').catch(()=>{});await rm(tmp,{recursive:true,force:true});}
 });
