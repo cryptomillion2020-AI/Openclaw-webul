@@ -7,13 +7,14 @@ import WebSocket, { WebSocketServer } from './vendor/ws/wrapper.mjs';
 import { snapshot, preflight, websocketDisposition } from './trading-api.mjs';
 
 const MIME = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.mp3':'audio/mpeg','.wav':'audio/wav','.mp4':'video/mp4','.webm':'video/webm','.txt':'text/plain; charset=utf-8','.avif':'image/avif' };
-export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765' }) {
-  const origins = new Set(['http://127.0.0.1:5173','http://100.123.21.56:5173','https://audiblchocolate.tail8754b4.ts.net:8443','http://audiblchocolate.tail8754b4.ts.net:8080']);
+export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765', authorizeRequest = async () => true, extraOrigins = [] }) {
+  const origins = new Set(['http://127.0.0.1:5173','http://100.123.21.56:5173','https://audiblchocolate.tail8754b4.ts.net:8443','http://audiblchocolate.tail8754b4.ts.net:8080', ...extraOrigins]);
   const allowedOrigin = req => !req.headers.origin || origins.has(req.headers.origin) || req.headers.origin === `http://${req.headers.host}`;
   const json = (res, status, body) => { res.writeHead(status, { 'Content-Type':'application/json', 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff' });res.end(JSON.stringify(body)); };
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
     try {
+      if (!await authorizeRequest(req)) return json(res,401,{error:'access_authentication_required',admitted:false});
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname.startsWith('/api/')) {
         if (!allowedOrigin(req)) return json(res,403,{error:'origin_refused'});
@@ -41,7 +42,10 @@ export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl 
     } catch { if(!res.headersSent)json(res,500,{error:'surface_unavailable'});else res.end(); }
   });
   const wss=new WebSocketServer({noServer:true,maxPayload:24576,perMessageDeflate:false});
-  server.on('upgrade',(req,socket,head)=>{
+  server.on('upgrade',async(req,socket,head)=>{
+    try {
+      if (!await authorizeRequest(req)) { socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); return; }
+    } catch { socket.destroy(); return; }
     if(req.url!=='/ws'||!allowedOrigin(req)){socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');return;}
     wss.handleUpgrade(req,socket,head,client=>{
       const upstream=new WebSocket(upstreamUrl,{maxPayload:4*1024*1024,handshakeTimeout:8000,perMessageDeflate:false});

@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-webul",
+  "account_id": "0af96aa152eb922da1ff91f1b3991772",
+  "main": "index.mjs",
+  "compatibility_date": "2026-06-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../../dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/ws", "/ws/*"]
+  }
+}

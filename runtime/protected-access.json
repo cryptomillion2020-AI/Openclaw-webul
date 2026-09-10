@@ -1,0 +1,6 @@
+{
+  "issuer": "https://rough-wood-6784.cloudflareaccess.com",
+  "audience": "a4a935874fac877b7bb58d1a8f68fd44dc90bb64dcff0e529b625b958fa9dd48",
+  "appOrigin": "https://app.sevinsolutions.com",
+  "originBase": "https://ws.sevinsolutions.com"
+}
