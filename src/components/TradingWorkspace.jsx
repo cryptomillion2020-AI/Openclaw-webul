@@ -6,6 +6,7 @@ const number = value => value == null ? '—' : Number(value).toLocaleString(und
 const human = reason => reason.replaceAll('_', ' ');
 
 export function TradingWorkspace({ connected, onReconnect }) {
+  const [paperNamespace,setPaperNamespace]=useState(null);
   const [tab, setTab] = useState('markets');
   const [snapshot, setSnapshot] = useState(null);
   const [status, setStatus] = useState('loading');
@@ -35,11 +36,11 @@ export function TradingWorkspace({ connected, onReconnect }) {
   const feedState=status==='error'?'disconnected':!data?'loading':data.state==='fresh'&&(!Number.isFinite(age)||age<0||age>data.ttl_seconds)?'stale':data.state;
   return <section className="trading-workspace wsroom-station--wide" aria-label="Paper trading workspace">
     <header className="tw-header">
-      <div><span className="tw-kicker">PUBLIC DATA / PRIVATE DECISIONS</span><h2>Trading desk</h2><p>No capital connected. Paper admission stays closed until policy and authorization exist.</p></div>
+      <div><span className="tw-kicker">PUBLIC DATA / PRIVATE DECISIONS</span><h2>Trading desk</h2><p>No capital connected. Each simulated action requires your confirmation.</p></div>
       <div className="tw-connection" role="status"><span>Market API: {status==='error'?'disconnected':status==='loading'?'loading':status==='refreshing'?'refreshing':'connected'}</span><span>Fleet socket: {connected?'connected':'disconnected · reconnecting'}</span><button type="button" onClick={()=>{setRefresh(n=>n+1);onReconnect?.();}}>Reconnect / refresh</button></div>
     </header>
-    <nav className="tw-tabs" aria-label="Trading desk views">{[['markets','Public markets'],['paper','Paper workspace'],['integrations','Connections & policy']].map(([id,label])=><button key={id} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}</nav>
-    {snapshot?.fixture === true && <p className="tw-warning" role="status">FIXTURE — ISOLATED TEST DATA, NOT LIVE</p>}
+    <nav className="tw-tabs" aria-label="Trading desk views">{[['markets','Public markets'],['paper','Paper workspace'],['integrations','Connections']].map(([id,label])=><button key={id} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}</nav>
+    {paperNamespace === 'fixture' && <p className="tw-warning" role="status">FIXTURE — ISOLATED TEST DATA, NOT LIVE</p>}
     {status==='loading'&&<p role="status">Loading local public-market snapshot… No values inferred.</p>}
     {status==='error'&&<p className="tw-warning" role="alert">Market API disconnected. Last response is historical only; paper admission remains closed. Use Reconnect / refresh to retry.</p>}
     {tab==='markets'&&<div>
@@ -51,7 +52,7 @@ export function TradingWorkspace({ connected, onReconnect }) {
       })}</tbody></table></div>:status!=='loading'&&<div className="tw-empty"><strong>{instrument==='spot'?'Spot unavailable':'No perpetual data'}</strong><p>{instrument==='spot'?'No verified spot interface is connected. We do not relabel swaps as spot or substitute another venue.':'The publisher supplied no supported quote rows. No mock prices, balances or fills are substituted.'}</p></div>}
       <p className="tw-note">Source: {data?.source||'not connected'} · published {data?.generated_at||'unavailable'}. Public quotes are independent of the fleet socket and TradingView. The publisher refreshes separately; this button re-reads, not re-prices.</p>
     </div>}
-    {tab==='paper'&&<PaperControls/>}
-    {tab==='integrations'&&<div className="tw-policy"><h3>Connections & policy</h3><dl>{Object.entries(snapshot?.policy||{max_leverage:null,max_funding_cost_fraction:null,holding_horizon_intervals:null,risk_per_trade:null,architect_authorized:false}).map(([key,value])=><div key={key}><dt>{human(key)}</dt><dd>{value===null?'UNSET':value===false?'NOT AUTHORIZED':String(value)}</dd></div>)}</dl><p>BloFin perpetuals: public publisher only. Spot: unavailable. Account / broker / execution: not connected. TradingView: display-only; never an automation input.</p><p>{snapshot?.journal?.reason||'Journal interface unavailable. No policy or authorization is assumed.'}</p></div>}
+    {tab==='paper'&&<PaperControls onNamespace={setPaperNamespace}/>}
+    {tab==='integrations'&&<div className="tw-policy"><h3>Connections — real money disabled</h3><p>Paper simulation needs no risk-policy setup. Real-money execution remains unavailable.</p><p>BloFin perpetuals: public publisher only. Spot: unavailable. Account / broker / execution: not connected. TradingView: display-only; never an automation input.</p><p>{snapshot?.journal?.reason||'Journal interface unavailable. No policy or authorization is assumed.'}</p></div>}
   </section>;
 }

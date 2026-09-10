@@ -21,7 +21,8 @@ export function projectPerp(envelope, now = Date.now()) {
     if (!r || r.instId !== symbol) return [];
     const rowTime = positive(r.ts);
     const rowFresh = fresh && rowTime !== null && now >= rowTime && (now - rowTime) / 1000 <= ttl;
-    return [{ symbol, state: rowFresh && positive(r.last) !== null ? 'fresh' : 'stale', observed_at_ms: rowTime, last: positive(r.last), bid: positive(r.bidPrice), ask: positive(r.askPrice), mark: positive(r.markPrice), funding_rate: decimal(r.funding_rate ?? r.fundingRate) }];
+    const exact={bid:r.bidPrice,ask:r.askPrice,mark:r.markPrice,funding_rate:r.funding_rate??r.fundingRate};
+    return [{ symbol, exact, state: rowFresh && positive(r.last) !== null ? 'fresh' : 'stale', observed_at_ms: rowTime, last: positive(r.last), bid: positive(r.bidPrice), ask: positive(r.askPrice), mark: positive(r.markPrice), funding_rate: decimal(r.funding_rate ?? r.fundingRate) }];
   });
   return { ...base, generated_at: Number.isFinite(generated) ? envelope.generated_at : null, ttl_seconds: ttl, age_seconds: Number.isFinite(age) ? Math.max(0, Math.floor(age)) : null, state: !rows.length ? 'empty' : fresh && rows.some(r => r.state === 'fresh') ? 'fresh' : 'stale', reason: !rows.length ? 'no_supported_symbols' : fresh ? null : 'publisher_stale_or_unverified', rows };
 }
@@ -45,13 +46,13 @@ export async function snapshot({ read = readFile, now = Date.now() } = {}) {
 }
 
 export function preflight(input, state) {
-  const reasons = ['risk_policy_unset', 'architect_authorization_unavailable', 'journal_admission_disabled'];
+  const reasons = [];
   if (!input || input.mode !== 'paper' || !SYMBOLS.includes(input.symbol) || !['buy', 'sell'].includes(input.side) || positive(input.quantity) === null) reasons.push('invalid_paper_draft');
   if (input?.instrument_class !== 'crypto_perp') reasons.push('unsupported_instrument_class');
   if (state.perp.state !== 'fresh' || state.perp.rows.find(row => row.symbol === input?.symbol)?.state !== 'fresh') reasons.push('market_data_unavailable_or_stale');
   if (state.perp.rows.find(row => row.symbol === input?.symbol)?.funding_rate == null) reasons.push('funding_rate_unavailable');
   if (input && Object.keys(input).some(k => !['mode','symbol','side','quantity','instrument_class'].includes(k))) reasons.push('unsupported_fields');
-  return { ok: false, admitted: false, mode: 'paper-only', live_mode: false, checked_at: state.observed_at, reasons, effect: 'No order, journal entry, account call or position was created.' };
+  return { ok: reasons.length===0, admitted: false, confirmation_required:true, mode: 'paper-only', live_mode: false, checked_at: state.observed_at, reasons, effect: 'No order, journal entry, account call or position was created.' };
 }
 
 export { websocketDisposition } from './trading-ws-policy.mjs';

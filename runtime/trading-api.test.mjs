@@ -30,9 +30,9 @@ test('snapshot is always paper-only, policy UNSET, spot and accounts unavailable
  assert.equal(s.spot.state,'unavailable');assert.equal(s.account.state,'unavailable');assert.equal(s.policy.max_leverage,null);assert.equal(s.policy.architect_authorized,false);
  assert.equal((await snapshot({read:async()=>{throw Error('missing')}})).perp.state,'unavailable');
 });
-test('even a fresh complete paper draft cannot bypass missing policy or authorization',async()=>{
+test('fresh paper preflight needs confirmation, not a risk policy; no action is admitted',async()=>{
  const s=await state(),draft={mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',quantity:'1'};
- const result=preflight(draft,s);assert.equal(result.admitted,false);assert.ok(result.reasons.includes('risk_policy_unset'));
+ const result=preflight(draft,s);assert.equal(result.admitted,false);assert.equal(result.ok,true);assert.equal(result.confirmation_required,true);assert.deepEqual(result.reasons,[]);
  for(const extra of [{mode:'live'},{architect_authorized:true},{max_leverage:10},{source:'TradingView'},{instrument_class:'crypto_spot'},{quantity:null}])assert.equal(preflight({...draft,...extra},s).admitted,false);
 });
 test('WS rejects legacy journal and unknown/live-order routes before upstream forwarding',()=>{
