@@ -43,6 +43,11 @@ function hasQualifiedOrigin(url) {
 }
 
 export function TradingViewChart() {
+  const [symbolDraft,setSymbolDraft] = useState(TRADINGVIEW_WIDGET_CONFIG.symbol);
+  const [displaySymbol,setDisplaySymbol] = useState(TRADINGVIEW_WIDGET_CONFIG.symbol);
+  const [interval,setInterval] = useState(TRADINGVIEW_WIDGET_CONFIG.interval);
+  const [selectionError,setSelectionError] = useState('');
+  const widgetUrl = useMemo(()=>`${TRADINGVIEW_WIDGET_ORIGIN}/embed-widget/advanced-chart/?locale=en#${encodeURIComponent(JSON.stringify({...TRADINGVIEW_WIDGET_CONFIG,symbol:displaySymbol,interval,width:'100%',height:'100%'}))}`,[displaySymbol,interval]);
   const qualifiedOrigin = useMemo(() => hasQualifiedOrigin(TRADINGVIEW_WIDGET_URL), []);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState(
@@ -106,6 +111,18 @@ export function TradingViewChart() {
         differ from Market Context. No TradingView account, login, API key, or webhook is connected.
       </p>
 
+      <form className="tradingview-selector" onSubmit={event=>{
+        event.preventDefault();const next=symbolDraft.trim().toUpperCase();
+        if(!/^[A-Z0-9_]{1,24}:[A-Z0-9_.!-]{1,40}$/.test(next)){setSelectionError('Use a TradingView display symbol in EXCHANGE:TICKER format.');return;}
+        setSelectionError('');setDisplaySymbol(next);setAttempt(n=>n+1);setState(TRADINGVIEW_STATE.LOADING);
+      }}>
+        <label>Chart symbol — display only<input value={symbolDraft} onChange={e=>setSymbolDraft(e.target.value)} maxLength={65}/></label>
+        <label>Chart interval<select value={interval} onChange={e=>{setInterval(e.target.value);setState(TRADINGVIEW_STATE.LOADING);}}>{[['5','5 minutes'],['15','15 minutes'],['60','1 hour'],['240','4 hours'],['D','Daily'],['W','Weekly']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+        <button type="submit">Apply chart symbol</button>
+        <p>This selects only the third-party chart. It does not select a paper instrument, establish venue support, or provide execution prices.</p>
+        {selectionError&&<p role="alert">{selectionError}</p>}
+      </form>
+
       <div className="tradingview-status" role="status" aria-live="polite" data-testid="tradingview-status">
         <span className="tradingview-status-dot" aria-hidden="true" />
         <span>{statusCopy}</span>
@@ -120,8 +137,8 @@ export function TradingViewChart() {
           </div>
         ) : (
           <iframe
-            key={attempt}
-            src={TRADINGVIEW_WIDGET_URL}
+            key={`${attempt}:${displaySymbol}:${interval}`}
+            src={widgetUrl}
             title="TradingView third-party chart"
             loading="eager"
             referrerPolicy="no-referrer"

@@ -30,7 +30,9 @@ export async function snapshot({ read = readFile, now = Date.now() } = {}) {
   let perp = projectPerp(null, now);
   try {
     const bytes = await read(PERP_PATH);
-    perp = { ...projectPerp(JSON.parse(bytes.toString()), now), source_sha256: createHash('sha256').update(bytes).digest('hex') };
+    const envelope=JSON.parse(bytes.toString());
+    if(envelope.fixture===true)throw new Error('Fixture publisher is never operational market data');
+    perp = { ...projectPerp(envelope, now), source_sha256: createHash('sha256').update(bytes).digest('hex') };
   } catch { /* A missing, malformed or unreadable source is unavailable, never a fixture. */ }
   return {
     schema_version: 'trading-webui-1', observed_at: new Date(now).toISOString(), mode: 'paper-only', live_mode: false,

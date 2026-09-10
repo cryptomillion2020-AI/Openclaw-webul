@@ -5,13 +5,15 @@ import { realpath, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createReleaseServer } from './serve-trading.mjs';
-import { createAccessVerifier, accessAssertion } from './access-verifier.mjs';
+import { createAccessVerifier, createAccessPrincipalVerifier, accessAssertion } from './access-verifier.mjs';
 import config from './protected-access.json' with { type: 'json' };
 
 export function createProtectedOrigin({ root, accessConfig = config, verifier, releaseId = 'isolated-unsealed', ...options }) {
   if (accessConfig.appOrigin !== 'https://app.sevinsolutions.com') throw new Error('Exact application origin required');
   const verify = verifier || createAccessVerifier(accessConfig);
-  const app = createReleaseServer({ ...options, root, extraOrigins: [accessConfig.appOrigin], authorizeRequest: req => verify(accessAssertion(req.headers)) });
+  const principal = createAccessPrincipalVerifier(accessConfig);
+  const paper = {identity:req=>principal(accessAssertion(req.headers)),...options.paper};
+  const app = createReleaseServer({ ...options, paper, root, extraOrigins: [accessConfig.appOrigin], authorizeRequest: req => verify(accessAssertion(req.headers)) });
   app.server.prependListener('request', (_req, res) => res.setHeader('X-Trading-Origin-Release', releaseId));
   return app;
 }

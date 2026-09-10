@@ -7,7 +7,7 @@ export function accessAssertion(headers) {
   return typeof value === 'string' && value.length <= 16384 ? value : null;
 }
 
-export function createAccessVerifier(config, { keyResolver, now = () => new Date() } = {}) {
+export function createAccessPrincipalVerifier(config, { keyResolver, now = () => new Date() } = {}) {
   if (!config || !/^[a-f0-9]{64}$/.test(config.audience || '')) throw new Error('Access audience must be explicitly pinned');
   const issuer = new URL(config.issuer);
   if (issuer.protocol !== 'https:' || !issuer.hostname.endsWith('.cloudflareaccess.com') || issuer.username || issuer.password || issuer.port || !['', '/'].includes(issuer.pathname) || issuer.search || issuer.hash || config.issuer !== issuer.origin) throw new Error('Invalid pinned Access issuer');
@@ -20,8 +20,14 @@ export function createAccessVerifier(config, { keyResolver, now = () => new Date
         requiredClaims: ['iss', 'aud', 'sub', 'iat', 'exp'], currentDate: now(), clockTolerance: 0,
       });
       // Public metadata and organization tokens are not application authorization.
-      return payload.type === 'app' && typeof payload.sub === 'string' && payload.sub.length > 0 &&
+      const valid = payload.type === 'app' && typeof payload.sub === 'string' && payload.sub.length > 0 &&
         typeof payload.iat === 'number' && payload.iat <= now().getTime() / 1000 + 30;
+      return valid ? Object.freeze({authenticated:true,subject:payload.sub}) : false;
     } catch { return false; }
   };
+}
+
+export function createAccessVerifier(config, options) {
+  const principal = createAccessPrincipalVerifier(config, options);
+  return async assertion => Boolean(await principal(assertion));
 }

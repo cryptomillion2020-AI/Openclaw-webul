@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 import WebSocket, { WebSocketServer } from './vendor/ws/wrapper.mjs';
 import { snapshot, preflight, websocketDisposition } from './trading-api.mjs';
 
+import { createPaperHandler } from './paper-http.mjs';
 const MIME = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.mp3':'audio/mpeg','.wav':'audio/wav','.mp4':'video/mp4','.webm':'video/webm','.txt':'text/plain; charset=utf-8','.avif':'image/avif' };
-export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765', authorizeRequest = async () => true, extraOrigins = [] }) {
+export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765', authorizeRequest = async () => true, extraOrigins = [], paper = {} }) {
+  const paperHandler = createPaperHandler(paper);
   const origins = new Set(['http://127.0.0.1:5173','http://100.123.21.56:5173','https://audiblchocolate.tail8754b4.ts.net:8443','http://audiblchocolate.tail8754b4.ts.net:8080', ...extraOrigins]);
   const allowedOrigin = req => !req.headers.origin || origins.has(req.headers.origin) || req.headers.origin === `http://${req.headers.host}`;
   const json = (res, status, body) => { res.writeHead(status, { 'Content-Type':'application/json', 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff' });res.end(JSON.stringify(body)); };
@@ -18,6 +20,8 @@ export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl 
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname.startsWith('/api/')) {
         if (!allowedOrigin(req)) return json(res,403,{error:'origin_refused'});
+        const paperResponse=await paperHandler(req,url,getSnapshot);
+        if(paperResponse)return json(res,paperResponse.status,paperResponse.body);
         if (url.pathname === '/api/trading/snapshot' && req.method === 'GET') return json(res,200,await getSnapshot());
         if (url.pathname === '/api/trading/preflight' && req.method === 'POST') {
           let body = ''; let exceeded = false;

@@ -132,7 +132,13 @@
   line-height: 1.6;
 }
 
+.tradingview-selector{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:16px 0}
+.tradingview-selector label{display:grid;gap:6px;min-width:0;font-size:12px}
+.tradingview-selector input,.tradingview-selector select,.tradingview-selector button{box-sizing:border-box;max-width:100%;min-height:44px;padding:10px;border:1px solid #7b6950;border-radius:5px;background:#15120e;color:#eee6d8;font:inherit}
+.tradingview-selector p{flex-basis:100%;font-size:12px;line-height:1.6}
+.tradingview-selector :focus-visible{outline:2px solid #74c7c3;outline-offset:3px}
 @media (max-width: 720px) {
+  .tradingview-selector label{width:100%}
   .tradingview-provenance {
     align-items: flex-start;
     flex-direction: column;

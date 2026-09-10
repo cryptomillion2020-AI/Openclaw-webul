@@ -92,7 +92,8 @@ export function ControlsCluster({ killActive, mode3Conditions, mode3Enabled, onS
 
   return (
     <>
-      <div className="controls-cluster" style={styles.cluster}>
+      <div className="controls-cluster" style={{...styles.cluster, flexWrap:'wrap'}}>
+        <span aria-label="Paper simulation only" style={{fontSize:11,fontWeight:700,color:'#edc087'}}>PAPER ONLY · NO REAL MONEY</span>
         <button style={killBtnStyle} onClick={handleKillClick} title={killActive ? 'Deactivate' : 'Halt QUANT'}>
           <span>⛔</span>
           <span>{killActive ? 'KILL ACTIVE' : 'Kill Switch'}</span>
