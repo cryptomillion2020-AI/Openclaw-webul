@@ -47,11 +47,16 @@ export async function snapshot({ read = readFile, now = Date.now() } = {}) {
 
 export function preflight(input, state) {
   const reasons = [];
-  if (!input || input.mode !== 'paper' || !SYMBOLS.includes(input.symbol) || !['buy', 'sell'].includes(input.side) || positive(input.quantity) === null) reasons.push('invalid_paper_draft');
+  // Units sizes by contract quantity; amount sizes by quote-currency (USDT) notional budget. Exactly one field per mode.
+  const sizingMode = input?.sizing_mode ?? 'units';
+  const sizedOk = ['units', 'amount'].includes(sizingMode)
+    && (sizingMode === 'amount' ? positive(input?.amount) !== null && input?.quantity == null
+                                : positive(input?.quantity) !== null && input?.amount == null);
+  if (!input || input.mode !== 'paper' || !SYMBOLS.includes(input.symbol) || !['buy', 'sell'].includes(input.side) || !sizedOk) reasons.push('invalid_paper_draft');
   if (input?.instrument_class !== 'crypto_perp') reasons.push('unsupported_instrument_class');
   if (state.perp.state !== 'fresh' || state.perp.rows.find(row => row.symbol === input?.symbol)?.state !== 'fresh') reasons.push('market_data_unavailable_or_stale');
   if (state.perp.rows.find(row => row.symbol === input?.symbol)?.funding_rate == null) reasons.push('funding_rate_unavailable');
-  if (input && Object.keys(input).some(k => !['mode','symbol','side','quantity','instrument_class'].includes(k))) reasons.push('unsupported_fields');
+  if (input && Object.keys(input).some(k => !['mode','symbol','side','quantity','instrument_class','sizing_mode','amount'].includes(k))) reasons.push('unsupported_fields');
   return { ok: reasons.length===0, admitted: false, confirmation_required:true, mode: 'paper-only', live_mode: false, checked_at: state.observed_at, reasons, effect: 'No order, journal entry, account call or position was created.' };
 }
 

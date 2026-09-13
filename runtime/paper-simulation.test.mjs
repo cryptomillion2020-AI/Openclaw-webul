@@ -73,3 +73,23 @@ test('V2 negative contract: source/freshness, owner/action binding, precision, l
  const ca=await approve('cancel',{id:order.id});assert.equal(run('cancel',{id:order.id,approval:ca},stale).order.status,'cancelled');
  await assert.rejects(gate.requestApproval({principal,action:'submit',draft,confirmation:'yes'}),/explicit_trade_confirmation/);
 });
+test('amount-mode sizing: USDT notional budget floors to 8dp units with residual, paper-only, units-mode preserved',async t=>{
+ const dir=mkdtempSync(path.join(os.tmpdir(),'paper-v2-amount-'));let now=Date.now();const gate=createPaperActionApprovals({now:()=>now});
+ const l=new PaperSimulation({filename:path.join(dir,'ledger.sqlite'),verifyApproval:gate.verifyApproval,now:()=>now});t.after(()=>{l.close();rmSync(dir,{recursive:true,force:true});});
+ const principal={authenticated:true,subject:'amount-owner'};let key=0;
+ const state=()=>({perp:{source:'blofin_public',instrument_class:'crypto_perp',state:'fresh',generated_at:new Date(now).toISOString(),ttl_seconds:30,rows:[{symbol:'BTC-USDT',state:'fresh',bid:'99',ask:'101',mark:'100',funding_rate:'0',observed_at_ms:now}]}});
+ const call=async(action,input)=>{const approval=await gate.requestApproval({principal,action,draft:input.draft,input,confirmation:'CONFIRM PAPER'});return l.transaction(principal,'amount-key-'+(++key),action,{...input,approval},state());};
+ // Buy market, 202 USDT notional at ask 101 -> exactly 2 units, zero residual; amount never re-sized later.
+ const clean=await call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',sizing_mode:'amount',amount:'202'}});
+ assert.equal(clean.order.quantity,'2');assert.equal(clean.order.sizing_mode,'amount');assert.equal(clean.order.requested_amount,'202');assert.equal(clean.order.sizing_quote,'101');assert.equal(clean.order.notional_residual,'0');assert.equal(clean.order.price,null);
+ // 250 USDT floors to valid instrument precision; residual is the unspendable remainder of the budget.
+ const resid=await call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',sizing_mode:'amount',amount:'250'}});
+ assert.equal(resid.order.quantity,'2.47524752');assert.equal(resid.order.notional_residual,'0.00000048');
+ // Units-mode default is unchanged and records units sizing metadata (no notional fields).
+ const units=await call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',quantity:'0.3',price:null}});
+ assert.equal(units.order.quantity,'0.3');assert.equal(units.order.sizing_mode,'units');assert.equal(units.order.requested_amount,null);
+ // Negatives: too-small budget, both fields, unsupported sizing_mode are refused paper-only.
+ await assert.rejects(call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',sizing_mode:'amount',amount:'0.000001'}}),/amount_too_small/);
+ await assert.rejects(call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',sizing_mode:'amount',amount:'202',quantity:'1'}}),/invalid_values/);
+ await assert.rejects(call('submit',{draft:{mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy',type:'market',sizing_mode:'nonsense',amount:'202'}}),/invalid_sizing_mode/);
+});

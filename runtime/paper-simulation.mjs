@@ -1,6 +1,6 @@
 // V2 paper-only engine. Legacy records are retained, not silently re-priced.
 import {PaperLedger,PaperError,fingerprint} from './paper-ledger.mjs';
-import {parse,format,mul,div,roundDiv} from './paper-decimal.mjs';
+import {parse,format,mul,div,roundDiv,SCALE} from './paper-decimal.mjs';
 import {PAPER_CAPABILITY} from './paper-capability.mjs';
 import {randomUUID} from 'node:crypto';
 const fail=(s,status=422)=>{throw new PaperError(s,status);};
@@ -49,10 +49,33 @@ export class PaperSimulation extends PaperLedger{
    };
    let result;
    if(action==='submit'){
-    const d=input.draft;exactKeys(d,['mode','instrument_class','symbol','side','type','quantity','price']);
+    const d=input.draft;exactKeys(d,['mode','instrument_class','symbol','side','type','quantity','price','sizing_mode','amount']);
     if(d.mode!=='paper'||d.instrument_class!=='crypto_perp'||!['BTC-USDT','ETH-USDT','SOL-USDT','BNB-USDT','XRP-USDT'].includes(d.symbol)||!['buy','sell'].includes(d.side)||!['market','limit'].includes(d.type))fail('invalid_paper_draft');
-    const quantity=qty(d.quantity);if(d.type==='limit')positive(d.price);else if(d.price!=null)fail('invalid_values');quote(d.symbol);
-    const order={id:randomUUID(),owner,...d,quantity:format(quantity),price:d.type==='limit'?format(dec(d.price)):null,filled:'0',remaining:format(quantity),status:'pending',created_at:now,accounting:'decimal-12-v2'};s.orders.push(order);result={order};
+    const sizing_mode=d.sizing_mode??'units';if(!['units','amount'].includes(sizing_mode))fail('invalid_sizing_mode');
+    if(d.type==='limit')positive(d.price);else if(d.price!=null)fail('invalid_values');
+    // A single fresh, side-specific quote validates the market AND anchors amount->units conversion.
+    const q=quote(d.symbol);
+    let quantity,sizing;
+    if(sizing_mode==='units'){
+     if(d.amount!=null)fail('invalid_values');
+     quantity=qty(d.quantity);
+     sizing={sizing_mode:'units',requested_amount:null,sizing_quote:null,notional_residual:null};
+    }else{
+     // Amount = quote-currency (USDT) NOTIONAL budget, never collateral/risk/leverage. Units locked here at submit
+     // so idempotent replay returns the stored order and never re-sizes at a later quote.
+     if(d.quantity!=null)fail('invalid_values');
+     const amount=positive(d.amount);
+     // Market: fresh side-specific execution quote (ask for buy, bid for sell). Limit: user limit price, fixed-quantity semantics.
+     const price=d.type==='limit'?dec(d.price):dec(d.side==='buy'?q.ask:q.bid);
+     // Floor the conversion to valid 8dp instrument precision so units*price never exceeds the requested budget.
+     const raw=(amount*SCALE)/price,units=raw-(raw%10000n);
+     if(units<=0n)fail('amount_too_small');
+     if(units>10n**24n)fail('invalid_values');
+     const consumed=(price*units)/SCALE; // floor of realised notional; residual is the un-spendable remainder of the budget.
+     quantity=units;
+     sizing={sizing_mode:'amount',requested_amount:format(amount),sizing_quote:format(price),notional_residual:format(amount-consumed)};
+    }
+    const order={id:randomUUID(),owner,mode:d.mode,instrument_class:d.instrument_class,symbol:d.symbol,side:d.side,type:d.type,quantity:format(quantity),price:d.type==='limit'?format(dec(d.price)):null,filled:'0',remaining:format(quantity),status:'pending',created_at:now,accounting:'decimal-12-v2',...sizing};s.orders.push(order);result={order};
    }else if(action==='cancel'){
     const o=s.orders.find(o=>o.id===input.id&&o.owner===owner);if(!o)fail('order_not_found',404);
     if(!['pending','partial'].includes(o.status)||dec(o.remaining)<=0n)fail('filled_or_cancelled_order_cannot_cancel',409);

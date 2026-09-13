@@ -80,3 +80,11 @@ test('CLI invoked through current symlink starts and serves, rather than exiting
   assert.equal(await response.text(),document);
  }finally{child.kill('SIGTERM');await once(child,'exit').catch(()=>{});await rm(tmp,{recursive:true,force:true});}
 });
+test('preflight amount-mode: exactly one of quantity or amount sizes a paper draft, stray keys refused',async()=>{
+ const s=await state();const base={mode:'paper',instrument_class:'crypto_perp',symbol:'BTC-USDT',side:'buy'};
+ assert.equal(preflight({...base,sizing_mode:'amount',amount:'202'},s).ok,true);
+ assert.equal(preflight({...base,sizing_mode:'units',quantity:'1'},s).ok,true);
+ assert.equal(preflight({...base,quantity:'1'},s).ok,true);
+ for(const bad of [{sizing_mode:'amount',amount:'202',quantity:'1'},{sizing_mode:'amount'},{sizing_mode:'units',amount:'202'},{sizing_mode:'bogus',amount:'202'}])assert.equal(preflight({...base,...bad},s).ok,false);
+ assert.ok(preflight({...base,quantity:'1',leverage:5},s).reasons.includes('unsupported_fields'));
+});
