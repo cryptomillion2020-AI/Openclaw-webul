@@ -1,0 +1,4 @@
+[measure] symbols high=BTC-USDT low=YFI-USDT universe=464
+[measure] REST cadence done
+[measure] WS cadence done
+[measure] candle cadence done

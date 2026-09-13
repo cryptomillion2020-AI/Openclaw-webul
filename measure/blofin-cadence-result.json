@@ -1,0 +1,121 @@
+{
+  "measured_at": "2026-09-12T23:18:28.674Z",
+  "clock": "single-host Date.now(); exchange ts=BloFin server time, cross-clock skew uncorrected",
+  "rest_base": "https://openapi.blofin.com",
+  "ws_base": "wss://openapi.blofin.com/ws/public",
+  "universe_usdt_instruments": 464,
+  "symbols": {
+    "high_liquidity": "BTC-USDT",
+    "low_liquidity": "YFI-USDT"
+  },
+  "rest_cadence": {
+    "high": {
+      "instId": "BTC-USDT",
+      "sampled_ms": 25000,
+      "poll_interval_ms": 400,
+      "distinct_updates": 3,
+      "rtt_ms": {
+        "n": 32,
+        "min": 374,
+        "p50": 385,
+        "p95": 464,
+        "p99": 483,
+        "max": 483,
+        "mean": 389
+      },
+      "update_delta_ms": {
+        "n": 2,
+        "min": 2829,
+        "p50": 24801,
+        "p95": 24801,
+        "p99": 24801,
+        "max": 24801,
+        "mean": 13815
+      },
+      "rate_headers": {}
+    },
+    "low": {
+      "instId": "YFI-USDT",
+      "sampled_ms": 25000,
+      "poll_interval_ms": 400,
+      "distinct_updates": 2,
+      "rtt_ms": {
+        "n": 32,
+        "min": 375,
+        "p50": 382,
+        "p95": 420,
+        "p99": 425,
+        "max": 425,
+        "mean": 385
+      },
+      "update_delta_ms": {
+        "n": 1,
+        "min": 45927,
+        "p50": 45927,
+        "p95": 45927,
+        "p99": 45927,
+        "max": 45927,
+        "mean": 45927
+      },
+      "rate_headers": {}
+    }
+  },
+  "ws_cadence": {
+    "high": {
+      "instId": "BTC-USDT",
+      "transport": "websocket",
+      "reachable": true,
+      "error": null,
+      "messages": 50,
+      "interarrival_ms": {
+        "n": 49,
+        "min": 453,
+        "p50": 500,
+        "p95": 539,
+        "p99": 548,
+        "max": 548,
+        "mean": 500
+      }
+    },
+    "low": {
+      "instId": "YFI-USDT",
+      "transport": "websocket",
+      "reachable": true,
+      "error": null,
+      "messages": 50,
+      "interarrival_ms": {
+        "n": 49,
+        "min": 448,
+        "p50": 496,
+        "p95": 546,
+        "p99": 555,
+        "max": 555,
+        "mean": 499
+      }
+    }
+  },
+  "candle_cadence": {
+    "high": {
+      "1m": {
+        "rows": 3,
+        "latest_open_ts": 1789255140000,
+        "span_ms": 60000
+      },
+      "5m": {
+        "rows": 3,
+        "latest_open_ts": 1789254900000,
+        "span_ms": 300000
+      },
+      "15m": {
+        "rows": 3,
+        "latest_open_ts": 1789254900000,
+        "span_ms": 900000
+      },
+      "1H": {
+        "rows": 3,
+        "latest_open_ts": 1789254000000,
+        "span_ms": 3600000
+      }
+    }
+  }
+}

@@ -5,6 +5,8 @@
 
 import { useState } from 'react';
 import { ControlsCluster } from '../components/ControlsCluster';
+import { PaperControls } from '../components/PaperControls';
+import '../components/trading-workspace.css';
 import { normalizeMarketFeed, marketFeedState } from '../feeds/marketFeeds';
 import strategyLab from '../data/quant-strategy-lab.json';
 
@@ -156,7 +158,8 @@ export function Trading({ killActive, mode3Conditions, mode3Enabled, onSend, bus
         <StrategyLab mode3Conditions={mode3Conditions} killActive={killActive} />
       )}
 
-      {activeTab !== 'strategy' && (
+      {activeTab === 'execution' && <section className="trading-workspace"><PaperControls/></section>}
+      {activeTab !== 'strategy' && activeTab !== 'execution' && (
       <div className="trading-overview-grid" style={{ marginTop: 16 }}>
         <div className="chart-card">
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Overview</h3>

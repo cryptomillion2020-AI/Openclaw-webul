@@ -29,6 +29,8 @@
  */
 import { useMemo } from 'react';
 import { MARKET_FEED_INVENTORY, normalizeMarketFeed, marketFeedState } from '../feeds/marketFeeds';
+import { TradingWorkspace } from '../components/TradingWorkspace';
+import { TradingViewChart } from '../components/TradingViewChart';
 import './workshop-room.css';
 
 /* The five Mode 3 conditions, in the order they appear in the state file.
@@ -103,7 +105,7 @@ function Row({ name, meta, state }) {
   );
 }
 
-export function Markets({ marketContext, mode3, feedHealth }) {
+export function Markets({ marketContext, mode3, feedHealth, connected, onReconnect }) {
   /* Freshness is judged against the context's OWN declared TTL, not a number
      invented here. A context past its TTL is stale even if the socket is up. */
   const snapshot = useMemo(() => normalizeMarketFeed(marketContext), [marketContext]);
@@ -124,7 +126,7 @@ export function Markets({ marketContext, mode3, feedHealth }) {
 
   const feeds = [
     { key: 'market_context', label: 'context',   state: ctxState,                    age: ctxAge },
-    { key: 'mode3',          label: 'gates',     state: readable ? 'LIVE' : 'DEAD',  age: null },
+    { key: 'mode3',          label: 'gates',     state: readable && connected ? 'REPORTED' : 'UNAVAILABLE',  age: null },
     { key: 'book',           label: 'positions', state: 'NO_SOURCE',                 age: null },
     { key: 'fills',          label: 'fills',     state: 'NO_SOURCE',                 age: null },
   ];
@@ -176,6 +178,16 @@ export function Markets({ marketContext, mode3, feedHealth }) {
       </div>
 
       <div className="wsroom-stations">
+        <TradingWorkspace connected={connected} onReconnect={onReconnect} />
+        <TradingViewChart />
+
+        <section className="wsroom-station" data-testid="strategy-crosslink">
+          <div className="wsroom-station-head">
+            <span className="wsroom-station-title">QUANT strategy corpus</span>
+            <span className="wsroom-station-count">research reference</span>
+          </div>
+          <p>Perpetual strategy research (BloFin perps; not spot, no performance claim) lives on the Research page. <a href="?page=research">Open Research → QUANT Strategy Corpus</a>.</p>
+        </section>
 
         <section className="wsroom-station wsroom-station--wide">
           <div className="wsroom-station-head">
@@ -186,8 +198,8 @@ export function Markets({ marketContext, mode3, feedHealth }) {
             <Row
               key={feed.id}
               name={`${feed.name} · ${feed.tier.toUpperCase()}`}
-              state={feed.status === 'live' ? 'active' : 'unknown'}
-              meta={`${feed.role} · ${feed.cost} · ${feed.auth} · ${feed.rateLimit}`}
+              state="unknown"
+              meta={`Catalog only; not a current connection check · ${feed.role} · ${feed.cost} · ${feed.auth} · ${feed.rateLimit}`}
             />
           ))}
         </section>
@@ -336,13 +348,10 @@ export function Markets({ marketContext, mode3, feedHealth }) {
             what="There is no book"
             why={
               <>
-                QUANT is at Mode 2 (proposal). Nothing executes, so there are no positions,
-                no realised or unrealised P&amp;L and no fills to report — and no service on
-                this host publishes any. This station stays empty until an execution feed
-                exists and the Mode 3 gates above are cleared by the Architect.
-                <br /><br />
-                The previous version of this page displayed an open P&amp;L, three sized
-                positions and five timestamped fills. None of it was real.
+                This surface has no authoritative positions, P&amp;L, balance or fill interface.
+                Absence of an interface does not prove an empty account. Paper readiness
+                checks do not create positions. Risk policy and per-trade Architect
+                authorization remain prerequisites; no real-money route is enabled.
               </>
             }
           />

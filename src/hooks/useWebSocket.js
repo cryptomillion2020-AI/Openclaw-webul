@@ -1,6 +1,6 @@
 /**
  * useWebSocket.js — WebSocket hook with channel multiplexing, exponential backoff,
- * heartbeat detection, and token auth.
+ * heartbeat detection, and same-origin transport isolation.
  *
  * Phase 5 FE-01 — Proposal 3 implementation
  *
@@ -17,9 +17,13 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-// Config
-const WS_URL  = import.meta.env.VITE_WS_URL  || 'wss://ws.sevinsolutions.com';
-const WS_TOKEN = import.meta.env.VITE_WS_TOKEN || '';
+// Config. Production uses the same browser origin and Vite reverse-proxies
+// /ws to the loopback-only backend. This keeps backend credentials out of the
+// JavaScript bundle and works on loopback, raw Tailnet, and Tailscale Serve.
+function resolveWebSocketUrl() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/ws`;
+}
 
 // Reconnect delays (exponential backoff)
 const BASE_DELAY   = 1000;   // 1s
@@ -74,15 +78,14 @@ export function useWebSocket({
   // Connect with exponential backoff
   // ---------------------------------------------------------------------------
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) return;
 
-    // Build URL with subprotocol for token auth (browser-compatible mechanism)
-    const protocols = WS_TOKEN ? [`bearer-${WS_TOKEN}`] : [];
-
-    const ws = new WebSocket(WS_URL, protocols);
+    const ws = new WebSocket(resolveWebSocketUrl());
     wsRef.current = ws;
 
     ws.onopen = () => {
+      if (wsRef.current !== ws) return;
+      clearInterval(heartbeatRef.current);
       setConnected(true);
       attemptRef.current = 0;
       lastMsgRef.current = Date.now();
@@ -109,6 +112,8 @@ export function useWebSocket({
     };
 
     ws.onclose = () => {
+      if (wsRef.current !== ws) return;
+      wsRef.current = null;
       setConnected(false);
       clearInterval(heartbeatRef.current);
 
@@ -161,6 +166,18 @@ export function useWebSocket({
     return true;
   }, []);
 
+  // Explicit reconnect also replaces a half-open/connecting transport.
+  const reconnectNow = useCallback(() => {
+    clearTimeout(timerRef.current);
+    clearInterval(heartbeatRef.current);
+    const previous = wsRef.current;
+    wsRef.current = null;
+    if (previous) { previous.onclose = null; previous.onerror = null; previous.close(); }
+    setConnected(false);
+    attemptRef.current = 0;
+    connect();
+  }, [connect]);
+
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
@@ -171,9 +188,11 @@ export function useWebSocket({
     return () => {
       clearTimeout(timerRef.current);
       clearInterval(heartbeatRef.current);
-      wsRef.current?.close();
+      const previous = wsRef.current;
+      wsRef.current = null;
+      if (previous) { previous.onclose = null; previous.onerror = null; previous.close(); }
     };
   }, [autoConnect, connect]);
 
-  return { connected, send, subscribe, reconnectFeed };
+  return { connected, send, subscribe, reconnectFeed, reconnectNow };
 }

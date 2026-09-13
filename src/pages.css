@@ -2508,3 +2508,6 @@ button.sidebar-show-toggle:focus-visible {
     grid-template-areas: "lock" "airgap" "items" "audit";
   }
 }
+
+
+:root{--gate6-build:"ct-fix-20260911"}
