@@ -25,7 +25,10 @@ export function createProtectedOrigin({ root, accessConfig = config, verifier, r
     try{const gate=createPaperActionApprovals();ledger=new PaperSimulation({filename:ledgerPath,verifyApproval:gate.verifyApproval});chmodSync(ledgerPath,0o600);simulation={ledger,requestApproval:gate.requestApproval};}finally{process.umask(previous);}
   }
   const paper = {...simulation,identity:req=>principal(accessAssertion(req.headers)),...options.paper};
-  const app = createReleaseServer({ ...options, paper, root, extraOrigins: [accessConfig.appOrigin], authorizeRequest: req => verify(accessAssertion(req.headers)) });
+  // Persistent kill-switch latch lives beside the ledger (same 0o700 dir), so "KILL ACTIVE" survives
+  // refresh/restart. Built only when a real operational ledger is wired.
+  const killLatchPath = ledgerPath ? path.join(path.dirname(ledgerPath), 'paper-kill-latch.sqlite') : (options.killLatchPath ?? null);
+  const app = createReleaseServer({ ...options, paper, root, killLatchPath, extraOrigins: [accessConfig.appOrigin], authorizeRequest: req => verify(accessAssertion(req.headers)) });
   app.server.prependListener('request', (_req, res) => res.setHeader('X-Trading-Origin-Release', releaseId));
   const close=app.close;app.close=async()=>{await close();ledger?.close();};
   return app;

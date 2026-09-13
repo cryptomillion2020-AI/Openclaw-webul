@@ -168,10 +168,15 @@
    box as Ø in the capture environment, which would make an approval rendering
    misrepresent the shipped page. Labelled buttons drop the glyph; the icon-only
    mute toggle keeps its button and gets a word. Presentation only — no handler
-   is touched. */
+   is touched.
+   Work Item B (DIRECTIVE 20260912-190423): the "Sound" word is scoped to the mute
+   toggle's dedicated .cc-mute class ONLY. The prior `:not(:has(span + span))`
+   selector also matched the modal action buttons (Cancel / Confirm resume / …),
+   which are text-only descendants of .cc-controls, and bled the word "Sound" onto
+   them. Scoping to .cc-mute keeps the label on the mute button alone. */
 .cc-controls button:has(span + span) span:first-child { display: none; }
-.cc-controls button:not(:has(span + span)) span { font-size: 0; }
-.cc-controls button:not(:has(span + span))::after { content: 'Sound'; }
+.cc-controls button.cc-mute span { font-size: 0; }
+.cc-controls button.cc-mute::after { content: 'Sound'; }
 
 .cc-controls button {
   margin: 9px 0;

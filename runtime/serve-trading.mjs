@@ -10,9 +10,35 @@ import { createPaperHandler } from './paper-http.mjs';
 import { createStrategyLibrary } from './strategy-library.mjs';
 import { createBacktestStore, REQUIRED_METADATA_KEYS } from './backtest-ingest.mjs';
 import { createPaperManagement } from './paper-management.mjs';
+import { PaperError } from './paper-ledger.mjs';
+import { createPaperKillSwitch } from './paper-killswitch.mjs';
+import { createSimulationKillExecutor } from './paper-kill-executor.mjs';
 const MIME = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.mp3':'audio/mpeg','.wav':'audio/wav','.mp4':'video/mp4','.webm':'video/webm','.txt':'text/plain; charset=utf-8','.avif':'image/avif' };
-export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765', authorizeRequest = async () => true, extraOrigins = [], paper = {}, strategyLibrary = createStrategyLibrary(), backtestStore = createBacktestStore({ baseDir: path.join(path.dirname(path.resolve(root)), 'backtest-store') }), paperManagement = createPaperManagement({ filename: path.join(path.dirname(path.resolve(root)), 'paper-management.sqlite') }) }) {
-  const paperHandler = createPaperHandler(paper);
+export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl = 'ws://127.0.0.1:8765', authorizeRequest = async () => true, extraOrigins = [], paper = {}, strategyLibrary = createStrategyLibrary(), backtestStore = createBacktestStore({ baseDir: path.join(path.dirname(path.resolve(root)), 'backtest-store') }), paperManagement = createPaperManagement({ filename: path.join(path.dirname(path.resolve(root)), 'paper-management.sqlite') }), killLatchPath = null }) {
+  // Emergency PAPER close-all state machine. Built only when a real operational ledger + server-owned
+  // approval authority are present. The executor drives the F-1-qualified engine UNMODIFIED, minting
+  // per-trade approvals in bulk under one authenticated activation. The latch persists across restart.
+  let killSwitch = null;
+  if (killLatchPath && paper?.ledger && typeof paper.requestApproval === 'function') {
+    const executor = createSimulationKillExecutor({ ledger: paper.ledger, requestApproval: paper.requestApproval, getSnapshot });
+    killSwitch = createPaperKillSwitch({ filename: killLatchPath, executor });
+  }
+  // The entry lock refuses NEW paper entries (submit) while a kill is active — WITHOUT blocking the
+  // kill executor itself (which uses the raw ledger, not this guard). Cancel/reduce stay permitted so
+  // an unresolved kill can be retried. Only 'submit' is gated.
+  const guardedLedger = (killSwitch && paper?.ledger)
+    ? new Proxy(paper.ledger, {
+        get(target, prop, recv) {
+          if (prop === 'transaction') return (identity, key, action, input, state) => {
+            if (action === 'submit') { const owner = identity?.subject; if (owner && killSwitch.isLocked(owner)) throw new PaperError('entries_locked_kill_active', 409); }
+            return target.transaction(identity, key, action, input, state);
+          };
+          const v = Reflect.get(target, prop, recv);
+          return typeof v === 'function' ? v.bind(target) : v;
+        },
+      })
+    : paper?.ledger;
+  const paperHandler = createPaperHandler(guardedLedger ? { ...paper, ledger: guardedLedger } : paper);
   const BACKTEST_MAX_BYTES = 12 * 1024 * 1024;
   // Buffer a request body with a hard cap; refuses (413) before over-buffering an untrusted upload.
   const readBody = async (req, cap) => {
@@ -30,6 +56,39 @@ export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl 
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname.startsWith('/api/')) {
         if (!allowedOrigin(req)) return json(res,403,{error:'origin_refused'});
+        // Emergency PAPER close-all + resume + status. Authenticated by the same principal verifier as
+        // the paper ledger. Handled BEFORE paperHandler (which would 404 unknown /paper/* routes).
+        // "KILL ACTIVE" is a backend-ACK'd latch — no optimistic client toggle. PAPER-ONLY; any
+        // live/real field is refused (403). Resume requires an explicit separate confirmation token.
+        if (url.pathname.startsWith('/api/trading/paper/kill/')) {
+          if (!killSwitch) return json(res,404,{error:'unsupported_or_live_route_disabled',live_mode:false});
+          let principal=null; try { principal = paper?.identity ? await paper.identity(req) : null; } catch { principal=null; }
+          if (!principal?.authenticated || typeof principal.subject!=='string' || !principal.subject.length)
+            return json(res,401,{error:'authentication_required',live_mode:false});
+          const owner = principal.subject;
+          try {
+            if (url.pathname==='/api/trading/paper/kill/status' && req.method==='GET')
+              return json(res,200,killSwitch.status({owner}));
+            if (url.pathname==='/api/trading/paper/kill/audit' && req.method==='GET')
+              return json(res,200,{events:killSwitch.auditTrail({owner,limit:Number(url.searchParams.get('limit'))||200}),live_mode:false});
+            if (req.method==='POST') {
+              let body={}; const raw=await readBody(req, 8*1024);
+              if (raw.length){ try { body=JSON.parse(raw.toString('utf8')||'{}'); } catch { return json(res,400,{error:'invalid_json',live_mode:false}); } }
+              if (!body || typeof body!=='object' || Array.isArray(body)) return json(res,400,{error:'invalid_input',live_mode:false});
+              // Emergency activation is authenticated + deterministic; no body confirmation token is
+              // required so the UI never has to delay the stop. Deliberate-activation friction is in the UI.
+              if (url.pathname==='/api/trading/paper/kill/activate')
+                return json(res,200,await killSwitch.activate({owner,input:body}));
+              // Resume is a SEPARATE deliberate action; require an explicit confirmation token server-side.
+              // It does NOT reopen closed/cancelled trades and does NOT auto-create entries.
+              if (url.pathname==='/api/trading/paper/kill/resume') {
+                if (body.confirm!=='RESUME PAPER') return json(res,403,{error:'explicit_resume_confirmation_required',live_mode:false});
+                return json(res,200,killSwitch.resume({owner,input:{}}));
+              }
+            }
+          } catch (e) { return json(res, Number.isInteger(e?.status)?e.status:500, {error:e?.code||e?.message||'kill_switch_error', detail:e?.detail||null, live_mode:false}); }
+          return json(res,404,{error:'unsupported_or_live_route_disabled',live_mode:false});
+        }
         const paperResponse=await paperHandler(req,url,getSnapshot);
         if(paperResponse)return json(res,paperResponse.status,paperResponse.body);
         // Item A — authenticated, read-only strategy library (fixed server-side allowlist).
@@ -173,7 +232,7 @@ export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl 
       client.on('close',()=>{pending=[];upstream.terminate();});
     });
   });
-  return {server,wss,close:async()=>{for(const client of wss.clients)client.terminate();await new Promise(resolve=>server.close(resolve));}};
+  return {server,wss,killSwitch,close:async()=>{for(const client of wss.clients)client.terminate();await new Promise(resolve=>server.close(resolve));killSwitch?.close();}};
 }
 
 if (process.argv[1] && await realpath(process.argv[1])===fileURLToPath(import.meta.url)) {
