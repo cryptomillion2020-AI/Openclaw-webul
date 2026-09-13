@@ -1,0 +1,45 @@
+{
+  "measured_at": "2026-09-12T23:25:48.376Z",
+  "engine": "PaperSimulation (CURRENT live engine; extends PaperLedger; SQLite BEGIN IMMEDIATE, BigInt scale-12)",
+  "clock": "process.hrtime.bigint() monotonic ns; pure in-process compute; NO network, NO quote-poll",
+  "isolation": "tmp ledger, no user-ledger contact",
+  "samples": 500,
+  "warmup": 50,
+  "scope_note": "This is the display->confirm->fill COMPUTE portion only. Quote->display in CURRENT arch is a 15000ms client REST poll of a file-backed snapshot (see blofin-cadence-result.json rest RTT) + out-of-band publisher cadence (UNMEASURED at source).",
+  "confirm_requestApproval_ms": {
+    "n": 500,
+    "min": 0.044,
+    "p50": 0.108,
+    "p95": 0.186,
+    "p99": 0.323,
+    "max": 0.629,
+    "mean": 0.117
+  },
+  "submit_transaction_ms": {
+    "n": 500,
+    "min": 3.298,
+    "p50": 24.015,
+    "p95": 67.411,
+    "p99": 77.201,
+    "max": 109.747,
+    "mean": 27.495
+  },
+  "settle_fill_transaction_ms": {
+    "n": 500,
+    "min": 3.352,
+    "p50": 24.893,
+    "p95": 66.96,
+    "p99": 82.167,
+    "max": 88.332,
+    "mean": 28.019
+  },
+  "end_to_end_confirm_to_fill_ms": {
+    "n": 500,
+    "min": 6.753,
+    "p50": 51.268,
+    "p95": 131.99,
+    "p99": 144.602,
+    "max": 175.675,
+    "mean": 55.753
+  }
+}

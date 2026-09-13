@@ -24,7 +24,6 @@ export const MARKET_FEED_INVENTORY = Object.freeze([
   { id: 'fear-greed', name: 'Alternative.me Fear & Greed', tier: 'free', status: 'live', role: 'market-context', cost: '$0', auth: 'none (public)', rateLimit: 'public endpoint; polite polling', fields: 'crypto sentiment' },
   { id: 'finnhub', name: 'Finnhub', tier: 'free', status: 'live', role: 'research-state', cost: '$0', auth: 'free API key (server-side, query param)', rateLimit: 'free-plan limit', fields: 'news/calendars (research-state; sentiment NOT aggregated per E.4)' },
   { id: 'api-ninjas', name: 'API Ninjas', tier: 'free', status: 'live', role: 'research-state', cost: '$0', auth: 'free API key (server-side, X-Api-Key header)', rateLimit: 'free-plan limit', fields: 'earnings (research-state; premium fields absent, never rendered)' },
-  { id: 'binance-public', name: 'Binance Futures Public', tier: 'free', status: 'geo-blocked', role: 'disabled', cost: '$0', auth: 'none (public)', rateLimit: 'IP/request-weight limits', fields: 'perpetual tickers, long/short ratios — geo-blocked from US host (AD-D2-A1)' },
 ]);
 
 /** Counts for the free-tier vs metered split, computed from the inventory. */

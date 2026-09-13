@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { STRATEGY_CORPUS } from '../feeds/strategyCorpus.js';
 
 const ALL_AGENTS = [
   { id: 'SEVIN', label: 'SEVIN — System Architect', color: '#F57F17' },
@@ -192,6 +193,11 @@ export function TeamResearch({ onSend, busActivity, connected }) {
             <button className="sessions-new-btn">+ New</button>
           </div>
           <div className="sessions-list">
+            <div className="session-item" data-testid="strategy-corpus">
+              <div className="session-item-title">{STRATEGY_CORPUS.title}</div>
+              <div className="session-item-meta" style={{ fontFamily: 'var(--font-mono)' }}>{STRATEGY_CORPUS.location}</div>
+              <div className="session-item-meta">Sourced {STRATEGY_CORPUS.sourced} · reference only · {STRATEGY_CORPUS.venue}. No new research or performance claim.</div>
+            </div>
             <div className="session-item active">
               <div className="session-item-title">Current Session</div>
               <div className="session-item-meta">0 messages</div>

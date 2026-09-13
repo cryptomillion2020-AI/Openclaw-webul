@@ -30,3 +30,8 @@ p412.mjs
 # public/world/final/*.mp4 + *.jpg, which ARE tracked. 68 MB of intermediates
 # must not enter history.
 .world-frames/
+
+# runtime paper-management engine DB (isolated test/runtime state, never source)
+paper-management.sqlite
+paper-management.sqlite-shm
+paper-management.sqlite-wal

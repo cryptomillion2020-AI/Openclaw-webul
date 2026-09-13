@@ -2,10 +2,44 @@ const {test,expect}=require('@playwright/test');const path=require('node:path');
 test.beforeEach(async({context,page})=>{await context.setExtraHTTPHeaders({'x-fixture-owner':require('node:crypto').randomUUID()});page.on('dialog',d=>d.accept());await context.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin==='http://127.0.0.1:5197')return r.continue();return r.abort();});});
 async function desk(page){await page.goto('/?page=trading');await page.waitForLoadState('networkidle');const hide=page.getByRole('button',{name:'Hide sidebar'});if(await hide.isVisible())await hide.click();await page.getByRole('button',{name:'Paper workspace',exact:true}).click();await expect(page.getByText(/ISOLATED TEST LEDGER/)).toBeVisible();}
 async function ticket(page,qty='1'){await page.getByLabel('Quantity',{exact:true}).fill(qty);await page.getByLabel('Confirm this specific PAPER ticket').check();}
-test('chart selectors are display-only and cannot change a paper ticket',async({page},info)=>{
- await desk(page);await page.getByLabel('Chart symbol — display only').fill('NASDAQ:MSFT');await page.getByRole('button',{name:'Apply chart symbol'}).click();await page.getByRole('combobox',{name:'Chart interval',exact:true}).selectOption('60');
- const frame=page.locator('iframe[title="TradingView third-party chart"]');const src=await frame.getAttribute('src');const config=JSON.parse(decodeURIComponent(new URL(src).hash.slice(1)));expect(config.symbol).toBe('NASDAQ:MSFT');expect(config.interval).toBe('60');expect(await page.getByRole('combobox',{name:'Perpetual symbol',exact:true}).inputValue()).toBe('BTC-USDT');
- await page.getByLabel('Chart symbol — display only').fill('<script>');await page.getByRole('button',{name:'Apply chart symbol'}).click();await expect(page.getByText('Use a TradingView display symbol in EXCHANGE:TICKER format.')).toBeVisible();await page.locator('.tradingview-surface').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-chart-selector.png')});
+test('chart points at BloFin, is display-only, and refuses unknown venue instruments without fallback',async({page},info)=>{
+ await desk(page);const surface=page.getByTestId('tradingview-surface');
+ await expect(surface).toHaveAttribute('data-display-symbol','BLOFIN:BTCUSDT.P');
+ // Selecting a BloFin perp visibly repoints exchange:ticker; stays BloFin, never Binance/AAPL.
+ await page.getByLabel('BloFin chart instrument').fill('ETH-USDT');await page.getByRole('button',{name:'Apply chart symbol'}).click();await page.getByRole('combobox',{name:'Chart interval',exact:true}).selectOption('60');
+ await expect(surface).toHaveAttribute('data-display-symbol','BLOFIN:ETHUSDT.P');
+ // The paper instrument is independent of the chart selection.
+ await expect(page.getByTestId('selected-instrument')).toContainText('BTC-USDT');
+ // Unknown-on-venue -> explicit unavailable, NO silent fallback (display symbol unchanged).
+ await page.getByLabel('BloFin chart instrument').fill('FAKE-USDT');await page.getByRole('button',{name:'Apply chart symbol'}).click();
+ await expect(page.getByTestId('tradingview-venue-error')).toContainText('Not available on BloFin');
+ await expect(surface).toHaveAttribute('data-display-symbol','BLOFIN:ETHUSDT.P');
+ await page.locator('.tradingview-surface').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-chart-selector.png')});
+});
+test('ledger refresh exposes explicit states and distinguishes auth-expiry from network',async({page})=>{
+ await desk(page);const rs=page.getByTestId('refresh-state');
+ await expect(rs).toHaveAttribute('data-refresh-state','success');await expect(rs).toContainText('Last refreshed');
+ await page.route('**/api/trading/paper/ledger',r=>r.fulfill({status:401,json:{error:'authentication_required'}}));
+ await page.getByRole('button',{name:'Refresh paper ledger'}).click();
+ await expect(rs).toHaveAttribute('data-refresh-state','error');await expect(rs).toContainText('[auth]');
+ await page.route('**/api/trading/paper/status',r=>r.abort());
+ await page.getByRole('button',{name:'Refresh paper ledger'}).click();
+ await expect(rs).toContainText('[network]');
+});
+test('instrument search uses the BloFin catalog; catalog-only instruments cannot be paper-filled',async({page},info)=>{
+ await desk(page);
+ await page.getByLabel('Search BloFin instruments').fill('SOL');
+ await expect(page.getByTestId('catalog-results')).toContainText('SOL-USDT');
+ await page.getByRole('button',{name:/^SOL-USDT/}).first().click();
+ await expect(page.getByTestId('selected-instrument')).toContainText('SOL-USDT');
+ await expect(page.getByTestId('not-fillable')).toBeVisible();
+ await page.getByLabel('Quantity',{exact:true}).fill('1');await page.getByLabel('Confirm this specific PAPER ticket').check();
+ await expect(page.getByRole('button',{name:'Confirm & submit paper trade'})).toBeDisabled();
+ // Spot is catalog-listed under its own verified endpoint but never paper-fillable.
+ await page.getByRole('button',{name:/^Spot \(/}).click();
+ await page.getByLabel('Search BloFin instruments').fill('ETH-USDT');
+ await expect(page.getByTestId('catalog-results')).toContainText('SPOT');
+ await page.locator('[aria-label="Paper controls"]').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-catalog-search.png')});
 });
 test('no risk setup required or fabricated account',async({page})=>{await desk(page);await expect(page.getByText('Risk policy setup',{exact:false})).toHaveCount(0);await expect(page.getByLabel('Leverage',{exact:true})).toHaveCount(0);await expect(page.getByText(/No capital, leverage or account balance is assumed/)).toBeVisible();});
 test('actual candidate UI: submit, simulated fill, reduce, close, cancel and history',async({page},info)=>{const errors=[];page.on('pageerror',e=>errors.push(e.message));await desk(page);await ticket(page);await page.getByRole('button',{name:'Confirm & submit paper trade'}).click();await expect(page.getByRole('button',{name:'Simulate eligible fill'}).last()).toBeVisible();await page.locator('.trading-workspace').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-pending-controls.png')});await page.getByRole('button',{name:'Simulate eligible fill'}).last().click();await expect(page.getByRole('button',{name:'Close position'}).last()).toBeVisible();await page.locator('.trading-workspace').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-position-controls.png')});await page.getByLabel('Reduce quantity BTC-USDT').last().fill('0.25');await page.getByRole('button',{name:'Reduce position',exact:true}).last().click();await expect(page.getByText('Quantity 0.75 · Average entry', {exact:false})).toBeVisible();await page.getByRole('button',{name:'Close position',exact:true}).last().click();await expect(page.getByRole('button',{name:'Close position',exact:true})).toHaveCount(0);await ticket(page);await page.getByRole('button',{name:'Confirm & submit paper trade'}).click();await page.getByRole('button',{name:'Cancel remaining quantity'}).last().click();await expect(page.getByRole('button',{name:'Cancel remaining quantity'})).toHaveCount(0);await expect(page.locator('[aria-label="Paper controls"]')).toContainText('cancel');await page.locator('.trading-workspace').screenshot({path:path.resolve('../revision-v2-evidence/'+info.project.name+'-paper-controls.png')});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);});

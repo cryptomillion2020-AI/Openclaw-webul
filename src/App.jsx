@@ -419,7 +419,7 @@ export default function App() {
       case 'trading':   return <Markets busActivity={busActivity} marketContext={marketContext} mode3={connected ? mode3Conditions : null} feedHealth={feedHealth} connected={connected} onReconnect={reconnectNow} />;
       case 'ai-city':   return <AiCityPage tasks={tasks} activeTasks={activeTasks} busActivity={busActivity} oauthStatus={oauthStatus} connected={connected} cityState={cityState} feedHealth={feedHealth} />;
       case 'vault':     return <Vault busActivity={busActivity} />;
-      case 'research':  return <Lab busActivity={busActivity} />;
+      case 'research':  return <Lab busActivity={busActivity} onSend={send} connected={connected} />;
       // Legacy pages reachable via explicit query param ?page=*-legacy
       case 'comms-legacy':    return <AgentComms onSend={send} busActivity={busActivity} connected={connected} commsByChannel={commsByChannel} addLocalEcho={addLocalEcho} />;
       case 'trading-legacy':  return <Trading {...pageProps} marketContext={marketContext} />;

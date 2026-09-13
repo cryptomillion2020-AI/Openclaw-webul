@@ -181,6 +181,14 @@ export function Markets({ marketContext, mode3, feedHealth, connected, onReconne
         <TradingWorkspace connected={connected} onReconnect={onReconnect} />
         <TradingViewChart />
 
+        <section className="wsroom-station" data-testid="strategy-crosslink">
+          <div className="wsroom-station-head">
+            <span className="wsroom-station-title">QUANT strategy corpus</span>
+            <span className="wsroom-station-count">research reference</span>
+          </div>
+          <p>Perpetual strategy research (BloFin perps; not spot, no performance claim) lives on the Research page. <a href="?page=research">Open Research → QUANT Strategy Corpus</a>.</p>
+        </section>
+
         <section className="wsroom-station wsroom-station--wide">
           <div className="wsroom-station-head">
             <span className="wsroom-station-title">Feed inventory</span>
