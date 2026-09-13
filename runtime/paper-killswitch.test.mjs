@@ -79,6 +79,31 @@ test('1. multi-position long/short kill-all -> flat and all pending cancelled', 
   } finally { k.close(); cleanup(); }
 });
 
+test('1b. EMPTY ledger (0 pending, 0 open) -> immediate reconciled flat, kill_active, latch set', async () => {
+  // Mirrors SEVIN read-only prestate 22:03: nothing to cancel or close. The switch must NOT
+  // stall or claim a phantom action; it locks entries and completes as flat immediately.
+  const ex = mockExecutor({ pending: [], positions: [] });
+  const k = createPaperKillSwitch({ filename: store(), executor: ex });
+  try {
+    const r = await k.activate({ owner: 'user-1' });
+    assert.equal(r.state, 'kill_active');
+    assert.equal(r.locked, true);              // entries locked even with nothing to close
+    assert.equal(r.reconciled_flat, true);
+    assert.equal(r.counts.pending_found, 0);
+    assert.equal(r.counts.cancelled, 0);
+    assert.equal(r.counts.positions_found, 0);
+    assert.equal(r.counts.closed, 0);
+    assert.equal(r.counts.close_unresolved, 0);
+    assert.equal(r.counts.cancel_failed, 0);
+    assert.equal(r.remaining.pending, 0);
+    assert.equal(r.remaining.open, 0);
+    assert.equal(r.data_blocker, null);
+    assert.ok(r.completion_ms >= 0);
+    // Latch persists as active; new entries refused until a deliberate resume.
+    assert.throws(() => k.assertEntryAllowed('user-1'), e => e.code === 'entries_locked_kill_active');
+  } finally { k.close(); cleanup(); }
+});
+
 test('2. pending + partial-fill orders all cancelled', async () => {
   const ex = mockExecutor({
     pending: [
