@@ -113,6 +113,12 @@ export function createReleaseServer({ root, getSnapshot = snapshot, upstreamUrl 
               return json(res, 200, paperManagement.confirm(await mgmtJson()));
             if (url.pathname === '/api/research/paper-mgmt/cancel' && req.method === 'POST')
               return json(res, 200, paperManagement.cancel(await mgmtJson()));
+            // §1.5 reduce-only lifecycle: manual close of the position and bracket-qty clamp. Both are
+            // user-initiated, PAPER-only, and never open/widen; no per-tick enforcement is exposed here.
+            if (url.pathname === '/api/research/paper-mgmt/close' && req.method === 'POST')
+              return json(res, 200, paperManagement.closePosition(await mgmtJson()));
+            if (url.pathname === '/api/research/paper-mgmt/reduce' && req.method === 'POST')
+              return json(res, 200, paperManagement.reduceQuantity(await mgmtJson()));
           } catch (e) { return json(res, Number.isInteger(e?.status) ? e.status : 500, { error: e?.code || e?.message || 'paper_mgmt_error', detail: e?.detail || null, live_mode: false }); }
           return json(res, 404, { error: 'unsupported_or_live_route_disabled' });
         }
